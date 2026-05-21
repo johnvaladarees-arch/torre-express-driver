@@ -10,13 +10,14 @@ import streamlit as st
 from database import DB_PATH
 
 
-LOGO_PATH = Path("assets/logo.png")
+BASE_DIR = Path(__file__).resolve().parent
+LOGO_PATH = BASE_DIR / "assets" / "logo.png"
 
 
-def exibir_logo_auth(width=290):
+def exibir_logo_auth(width=330):
 
     if LOGO_PATH.exists():
-        st.image(str(LOGO_PATH), width=width)
+        st.image(str(LOGO_PATH.resolve()), width=width)
     else:
         st.markdown("### Torre Express Driver")
 
@@ -208,10 +209,174 @@ def exibir_login():
                 --torre-laranja: #f97316;
                 --torre-fundo: #f3f4f6;
                 --torre-card: #ffffff;
+                color-scheme: light;
             }
 
             .stApp {
-                background: var(--torre-fundo);
+                background:
+                    radial-gradient(circle at 16% 14%, rgba(249, 115, 22, 0.08), transparent 22%),
+                    radial-gradient(circle at 86% 18%, rgba(11, 31, 58, 0.08), transparent 24%),
+                    linear-gradient(90deg, rgba(11, 31, 58, 0.025) 1px, transparent 1px),
+                    linear-gradient(0deg, rgba(11, 31, 58, 0.018) 1px, transparent 1px),
+                    var(--torre-fundo);
+                background-size: auto, auto, 72px 72px, 72px 72px, auto;
+                color: #111827;
+                overflow-x: hidden;
+            }
+
+            html, body, [class*="css"] {
+                color-scheme: light;
+            }
+
+            p, label, span, div, input, textarea {
+                color: #111827;
+            }
+
+            [data-testid="stAppViewContainer"] > .main {
+                position: relative;
+                z-index: 1;
+            }
+
+            .ops-bg {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                overflow: hidden;
+                z-index: 0;
+            }
+
+            .ops-road {
+                position: absolute;
+                width: 520px;
+                height: 220px;
+                border: 18px solid rgba(11, 31, 58, 0.055);
+                border-left-color: transparent;
+                border-bottom-color: transparent;
+                border-radius: 55% 45% 50% 50%;
+                transform: rotate(-14deg);
+            }
+
+            .ops-road::after {
+                content: "";
+                position: absolute;
+                inset: 18px;
+                border-top: 2px dashed rgba(11, 31, 58, 0.13);
+                border-right: 2px dashed rgba(11, 31, 58, 0.10);
+                border-radius: 55% 45% 50% 50%;
+            }
+
+            .ops-road.one {
+                left: -130px;
+                top: 80px;
+            }
+
+            .ops-road.two {
+                right: -180px;
+                bottom: 58px;
+                transform: rotate(164deg);
+                opacity: 0.82;
+            }
+
+            .ops-route {
+                position: absolute;
+                width: 430px;
+                height: 150px;
+                border-top: 3px dashed rgba(249, 115, 22, 0.22);
+                border-radius: 50%;
+                transform: rotate(18deg);
+            }
+
+            .ops-route.one {
+                left: 8%;
+                bottom: 16%;
+            }
+
+            .ops-route.two {
+                right: 9%;
+                top: 19%;
+                width: 340px;
+                transform: rotate(-21deg);
+                opacity: 0.70;
+            }
+
+            .ops-pin {
+                position: absolute;
+                width: 13px;
+                height: 13px;
+                border-radius: 50% 50% 50% 0;
+                background: rgba(249, 115, 22, 0.30);
+                transform: rotate(-45deg);
+                box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.055);
+            }
+
+            .ops-pin::after {
+                content: "";
+                position: absolute;
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.84);
+                left: 4px;
+                top: 4px;
+            }
+
+            .ops-pin.a {
+                left: 15%;
+                top: 31%;
+            }
+
+            .ops-pin.b {
+                right: 18%;
+                top: 42%;
+                background: rgba(11, 31, 58, 0.24);
+                box-shadow: 0 0 0 6px rgba(11, 31, 58, 0.045);
+            }
+
+            .ops-pin.c {
+                left: 72%;
+                bottom: 20%;
+                opacity: 0.75;
+            }
+
+            .ops-vehicle {
+                position: absolute;
+                width: 38px;
+                height: 19px;
+                border-radius: 7px 9px 6px 6px;
+                background: rgba(11, 31, 58, 0.20);
+                box-shadow: inset 12px 0 0 rgba(249, 115, 22, 0.16);
+            }
+
+            .ops-vehicle::before,
+            .ops-vehicle::after {
+                content: "";
+                position: absolute;
+                bottom: -4px;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: rgba(11, 31, 58, 0.18);
+            }
+
+            .ops-vehicle::before {
+                left: 7px;
+            }
+
+            .ops-vehicle::after {
+                right: 7px;
+            }
+
+            .ops-vehicle.a {
+                left: 21%;
+                bottom: 25%;
+                transform: rotate(9deg);
+            }
+
+            .ops-vehicle.b {
+                right: 23%;
+                top: 28%;
+                transform: rotate(-15deg);
+                opacity: 0.75;
             }
 
             .auth-shell {
@@ -221,7 +386,8 @@ def exibir_login():
                 border: 1px solid #e5e7eb;
                 border-radius: 18px;
                 box-shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
-                background: var(--torre-card);
+                background: rgba(255, 255, 255, 0.90);
+                backdrop-filter: blur(10px);
             }
 
             .auth-brand {
@@ -241,11 +407,11 @@ def exibir_login():
 
             div[data-testid="stImage"] {
                 text-align: center;
-                margin: 0 auto 0.65rem;
+                margin: 0 auto 0.9rem;
             }
 
             div[data-testid="stImage"] img {
-                max-width: min(300px, 82vw);
+                max-width: min(340px, 86vw);
                 height: auto;
                 object-fit: contain;
             }
@@ -254,22 +420,70 @@ def exibir_login():
                 background: var(--torre-laranja);
                 border: 1px solid var(--torre-laranja);
                 color: #ffffff;
-                border-radius: 8px;
-                min-height: 44px;
+                border-radius: 10px;
+                min-height: 50px;
                 font-weight: 700;
+                box-shadow: 0 6px 16px rgba(249, 115, 22, 0.14);
+                transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
             }
 
             div[data-testid="stFormSubmitButton"] button:hover {
                 background: #ea580c;
                 border-color: #ea580c;
                 color: #ffffff;
+                box-shadow: 0 8px 20px rgba(249, 115, 22, 0.20);
+                transform: translateY(-1px);
             }
 
             div[data-baseweb="tab-list"] button[aria-selected="true"] {
                 color: var(--torre-azul);
                 border-bottom-color: var(--torre-laranja);
             }
+
+            @media (max-width: 720px) {
+                .ops-bg {
+                    opacity: 0.62;
+                }
+
+                .ops-road.one {
+                    left: -260px;
+                    top: 90px;
+                }
+
+                .ops-road.two {
+                    right: -300px;
+                    bottom: 34px;
+                }
+
+                .ops-route.one {
+                    left: -120px;
+                    bottom: 12%;
+                }
+
+                .ops-route.two,
+                .ops-vehicle.b,
+                .ops-pin.b {
+                    display: none;
+                }
+            }
         </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <div class="ops-bg" aria-hidden="true">
+            <div class="ops-road one"></div>
+            <div class="ops-road two"></div>
+            <div class="ops-route one"></div>
+            <div class="ops-route two"></div>
+            <span class="ops-pin a"></span>
+            <span class="ops-pin b"></span>
+            <span class="ops-pin c"></span>
+            <span class="ops-vehicle a"></span>
+            <span class="ops-vehicle b"></span>
+        </div>
         """,
         unsafe_allow_html=True
     )
@@ -373,7 +587,7 @@ def exibir_sidebar_usuario():
     usuario = st.session_state["usuario_logado"]
 
     if LOGO_PATH.exists():
-        st.sidebar.image(str(LOGO_PATH), width=200)
+        st.sidebar.image(str(LOGO_PATH.resolve()), width=220)
     else:
         st.sidebar.title("Torre Express Driver")
 
