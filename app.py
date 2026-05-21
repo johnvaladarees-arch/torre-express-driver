@@ -2072,60 +2072,50 @@ if arquivo or df_base_manual is not None:
         value=True
     )
 
-    # Botão de localização automática via GPS para todos os perfis
+    # Botão GPS via streamlit-js-eval
     st.sidebar.markdown("**Minha localização**")
-    col_gps1, col_gps2 = st.sidebar.columns([2, 1])
 
-    with col_gps1:
-        st.sidebar.markdown(
-            """
-            <div id="gps-status" style="font-size:0.8rem; color:#6b7280; margin-bottom:4px;">
-                Toque em 📍 para usar o GPS
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    # JavaScript para capturar GPS
-    import streamlit.components.v1 as components
     gps_html = """
     <script>
     function capturarGPS() {
         const btn = document.getElementById('btn-gps');
-        btn.innerText = '⏳ Aguardando...';
+        btn.innerText = '⏳ Aguardando GPS...';
         btn.disabled = true;
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(pos) {
-                    const lat = pos.coords.latitude.toFixed(6);
-                    const lon = pos.coords.longitude.toFixed(6);
-                    // Envia para o Streamlit via query param
-                    const url = new URL(window.parent.location.href);
-                    url.searchParams.set('gps_lat', lat);
-                    url.searchParams.set('gps_lon', lon);
-                    window.parent.location.href = url.toString();
-                },
-                function(err) {
-                    btn.innerText = '❌ Erro GPS';
-                    btn.disabled = false;
-                },
-                {enableHighAccuracy: true, timeout: 10000}
-            );
-        } else {
+        if (!navigator.geolocation) {
             btn.innerText = '❌ GPS indisponível';
             btn.disabled = false;
+            return;
         }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                const lat = pos.coords.latitude.toFixed(6);
+                const lon = pos.coords.longitude.toFixed(6);
+                btn.innerText = '✅ ' + lat + ', ' + lon;
+                // Preenche campos ocultos e submete
+                document.getElementById('hidden-lat').value = lat;
+                document.getElementById('hidden-lon').value = lon;
+                document.getElementById('gps-form').submit();
+            },
+            function(err) {
+                btn.innerText = '❌ Permita o acesso ao GPS';
+                btn.disabled = false;
+            },
+            {enableHighAccuracy: true, timeout: 15000}
+        );
     }
     </script>
-    <button id="btn-gps" onclick="capturarGPS()"
-        style="background:#f97316;color:white;border:none;border-radius:8px;
-               padding:8px 16px;font-size:0.9rem;cursor:pointer;width:100%;">
-        📍 Usar minha localização
-    </button>
+    <form id="gps-form" method="GET" action="">
+        <input type="hidden" id="hidden-lat" name="gps_lat" value="">
+        <input type="hidden" id="hidden-lon" name="gps_lon" value="">
+        <button type="button" id="btn-gps" onclick="capturarGPS()"
+            style="background:#f97316;color:white;border:none;border-radius:8px;
+                   padding:10px 16px;font-size:0.95rem;cursor:pointer;width:100%;margin-bottom:4px;">
+            📍 Usar minha localização
+        </button>
+    </form>
     """
-    components.html(gps_html, height=50)
+    components.html(gps_html, height=55)
 
-    # Ler coordenadas do GPS via query params se disponíveis
     params = st.query_params
     if "gps_lat" in params and "gps_lon" in params:
         try:
