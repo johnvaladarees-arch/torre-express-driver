@@ -45,13 +45,14 @@ from operacoes import (
 )
 
 DB_PATH = "torre_express.db"
-LOGO_PATH = Path("assets/logo.png")
+BASE_DIR = Path(__file__).resolve().parent
+LOGO_PATH = BASE_DIR / "logo.png"
 
 
-def exibir_logo_principal(width=240):
+def exibir_logo_principal(width=280):
 
     if LOGO_PATH.exists():
-        st.image(str(LOGO_PATH), width=width)
+        st.image(str(LOGO_PATH.resolve()), width=width)
     else:
         st.title("Torre Express Driver")
 
@@ -936,6 +937,7 @@ def exibir_resumo_rota():
 
 def exibir_sobre_plataforma():
 
+    exibir_logo_principal(width=290)
     st.subheader("Torre Express Driver")
     st.caption("Plataforma Operacional Inteligente | Versão v1.0")
 
@@ -1215,10 +1217,23 @@ st.markdown(
             --torre-fundo: #f3f4f6;
             --torre-card: #ffffff;
             --torre-borda: #e5e7eb;
+            color-scheme: light;
+        }
+
+        html, body, [class*="css"] {
+            color-scheme: light;
         }
 
         .stApp {
             background: var(--torre-fundo);
+            color: #111827;
+        }
+
+        .stApp p,
+        .stApp label,
+        .stApp span,
+        .stApp div[data-testid="stMarkdownContainer"] {
+            color: #111827;
         }
 
         .block-container {
@@ -1249,22 +1264,22 @@ st.markdown(
         }
 
         div[data-testid="stImage"] {
-            margin-bottom: 0.45rem;
+            margin-bottom: 0.7rem;
         }
 
         div[data-testid="stImage"] img {
-            max-width: min(320px, 86vw);
+            max-width: min(360px, 88vw);
             height: auto;
             object-fit: contain;
         }
 
         section[data-testid="stSidebar"] div[data-testid="stImage"] {
             text-align: center;
-            margin: 0 auto 0.8rem;
+            margin: 0 auto 1rem;
         }
 
         section[data-testid="stSidebar"] div[data-testid="stImage"] img {
-            max-width: min(220px, 90%);
+            max-width: min(235px, 94%);
             height: auto;
             object-fit: contain;
         }
@@ -1277,6 +1292,18 @@ st.markdown(
         section[data-testid="stSidebar"] span,
         section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] {
             color: #ffffff;
+        }
+
+        section[data-testid="stSidebar"] input,
+        section[data-testid="stSidebar"] textarea,
+        section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+        section[data-testid="stSidebar"] div[data-baseweb="input"] span {
+            color: #111827 !important;
+        }
+
+        section[data-testid="stSidebar"] div[data-testid="stCaptionContainer"],
+        section[data-testid="stSidebar"] div[data-testid="stCaptionContainer"] p {
+            color: rgba(255, 255, 255, 0.82) !important;
         }
 
         section[data-testid="stSidebar"] div[role="radiogroup"] label {
@@ -1294,9 +1321,11 @@ st.markdown(
         div[data-testid="stButton"] button,
         div[data-testid="stLinkButton"] a,
         div[data-testid="stDownloadButton"] button {
-            min-height: 46px;
-            border-radius: 8px;
+            min-height: 50px;
+            border-radius: 10px;
             font-weight: 700;
+            transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, 0.10);
         }
 
         div[data-testid="stButton"] button,
@@ -1313,6 +1342,8 @@ st.markdown(
             background: var(--torre-laranja-2);
             border-color: var(--torre-laranja-2);
             color: #ffffff;
+            box-shadow: 0 7px 18px rgba(249, 115, 22, 0.18);
+            transform: translateY(-1px);
         }
 
         div[data-testid="stLinkButton"] a {
@@ -1325,6 +1356,8 @@ st.markdown(
             background: var(--torre-azul-2);
             border-color: var(--torre-azul-2);
             color: #ffffff;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.16);
+            transform: translateY(-1px);
         }
 
         iframe {
@@ -2132,6 +2165,16 @@ if arquivo or df_base_manual is not None:
     progresso_rota = (
         finalizados / total_pacotes
     ) if total_pacotes > 0 else 0
+    progresso_rota_pct = (
+        f"{progresso_rota * 100:.1f}%"
+        if 0 < progresso_rota < 1
+        else f"{int(progresso_rota * 100)}%"
+    )
+    paradas_pendentes_total = int(
+        (status_por_parada["Pendente"] > 0).sum()
+    )
+    paradas_concluidas = max(total_paradas - paradas_pendentes_total, 0)
+    pacotes_concluidos = finalizados
 
     pacotes_proxima = pd.DataFrame()
     distancia_proxima = 0
@@ -2161,56 +2204,127 @@ if arquivo or df_base_manual is not None:
         """
         <style>
             .premium-shell {
-                background: linear-gradient(135deg, #0b1f3a 0%, #12355b 62%, #f97316 100%);
-                border: 1px solid rgba(255, 255, 255, 0.16);
-                border-radius: 16px;
-                padding: 11px 12px;
+                background:
+                    radial-gradient(circle at 92% 0%, rgba(249, 115, 22, 0.18), transparent 32%),
+                    linear-gradient(135deg, #071b34 0%, #0b1f3a 58%, #12355b 100%);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                border-radius: 20px;
+                padding: 16px;
                 color: #f9fafb;
-                box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
-                margin: 2px auto 6px;
-                max-width: 680px;
+                box-shadow: 0 14px 34px rgba(11, 31, 58, 0.18);
+                margin: 4px auto 8px;
+                max-width: 760px;
             }
 
             .premium-kicker {
-                color: #fed7aa;
+                color: #fdba74;
                 font-size: 0.72rem;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
-                margin-bottom: 4px;
+                margin-bottom: 5px;
             }
 
             .premium-address {
-                font-size: clamp(0.98rem, 1.4vw, 1.2rem);
+                font-size: clamp(1.08rem, 1.6vw, 1.36rem);
                 font-weight: 800;
                 line-height: 1.2;
-                margin-bottom: 7px;
+                margin-bottom: 12px;
+            }
+
+            .premium-hero-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(180px, 0.65fr);
+                gap: 12px;
+                align-items: stretch;
+                margin-bottom: 12px;
             }
 
             .premium-grid {
                 display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 6px;
+                grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+                gap: 8px;
             }
 
             .premium-stat {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.13);
-                border-radius: 10px;
-                padding: 6px 8px;
+                background: rgba(255, 255, 255, 0.12);
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                border-radius: 12px;
+                padding: 8px 9px;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            }
+
+            .premium-stat.featured {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                min-height: 76px;
+                background: rgba(255, 255, 255, 0.15);
             }
 
             .premium-stat span {
                 display: block;
-                color: #cbd5e1;
+                color: #d8e2ee;
                 font-size: 0.68rem;
-                margin-bottom: 3px;
+                margin-bottom: 4px;
             }
 
             .premium-stat strong {
                 display: block;
                 color: #ffffff;
-                font-size: 0.92rem;
+                font-size: 0.9rem;
+            }
+
+            .premium-stat.featured strong {
+                font-size: clamp(1.12rem, 2vw, 1.55rem);
+            }
+
+            .premium-section-title {
+                color: #fdba74;
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin: 12px 0 7px;
+            }
+
+            .premium-progress-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .premium-progress-card {
+                background: rgba(255, 255, 255, 0.11);
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                border-radius: 13px;
+                padding: 10px;
+            }
+
+            .premium-progress-head {
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+                color: #d8e2ee;
+                font-size: 0.76rem;
+                margin-bottom: 7px;
+            }
+
+            .premium-progress-head strong {
+                color: #ffffff;
+            }
+
+            .premium-bar {
+                height: 8px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.16);
+                overflow: hidden;
+            }
+
+            .premium-bar-fill {
+                height: 100%;
+                border-radius: 999px;
+                background: linear-gradient(90deg, #f97316, #fdba74);
             }
 
             .route-progress {
@@ -2219,10 +2333,11 @@ if arquivo or df_base_manual is not None:
 
             div[data-testid="stLinkButton"] a,
             div[data-testid="stButton"] button {
-                min-height: 46px;
+                min-height: 52px;
                 width: 100%;
                 opacity: 1;
-                box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
+                border-radius: 11px;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
             }
 
             div[data-testid="stLinkButton"] a {
@@ -2235,6 +2350,7 @@ if arquivo or df_base_manual is not None:
                 background: #ea580c !important;
                 border-color: #fb923c !important;
                 color: #ffffff !important;
+                box-shadow: 0 10px 24px rgba(249, 115, 22, 0.20);
             }
 
             div[data-testid="stButton"] button[kind="primary"] {
@@ -2247,6 +2363,7 @@ if arquivo or df_base_manual is not None:
                 background: #ea580c !important;
                 border-color: #ea580c !important;
                 color: #ffffff !important;
+                box-shadow: 0 10px 24px rgba(249, 115, 22, 0.20);
             }
 
             div[data-testid="stButton"] button[kind="secondary"] {
@@ -2262,6 +2379,11 @@ if arquivo or df_base_manual is not None:
             }
 
             @media (max-width: 900px) {
+                .premium-hero-grid,
+                .premium-progress-grid {
+                    grid-template-columns: 1fr;
+                }
+
                 .premium-grid {
                     grid-template-columns: repeat(2, minmax(0, 1fr));
                 }
@@ -2355,7 +2477,21 @@ if arquivo or df_base_manual is not None:
         progresso_regiao = (
             finalizados_regiao / total_pacotes_regiao
         ) if total_pacotes_regiao > 0 else 0
-        progresso_regiao_pct = int(progresso_regiao * 100)
+        progresso_regiao_pct = (
+            f"{progresso_regiao * 100:.1f}%"
+            if 0 < progresso_regiao < 1
+            else f"{int(progresso_regiao * 100)}%"
+        )
+        paradas_pendentes_df = paradas[
+            paradas["_Endereco_Normalizado"].isin(chaves_pendentes)
+        ]
+        km_restante = calcular_km_rota(
+            paradas_pendentes_df,
+            col_lat,
+            col_lon,
+            lat_motorista,
+            lon_motorista
+        ) if len(paradas_pendentes_df) > 0 else 0
         maps_url_proxima = (
             "https://www.google.com/maps/search/?api=1"
             f"&query={proxima_parada[col_lat]},{proxima_parada[col_lon]}"
@@ -2386,42 +2522,73 @@ if arquivo or df_base_manual is not None:
         st.markdown(
             f"""
             <div class="premium-shell">
-                <div class="premium-kicker">{proxima_regiao}</div>
-                <div class="premium-address">{endereco_proxima}</div>
-                <div class="premium-grid">
-                    <div class="premium-stat">
-                        <span>Bairro</span>
-                        <strong>{bairro_proximo}</strong>
+                <div class="premium-hero-grid">
+                    <div>
+                        <div class="premium-kicker">Próxima parada | {proxima_regiao}</div>
+                        <div class="premium-address">{endereco_proxima}</div>
+                        <div class="premium-grid">
+                            <div class="premium-stat">
+                                <span>Bairro</span>
+                                <strong>{bairro_proximo}</strong>
+                            </div>
+                            <div class="premium-stat">
+                                <span>Pacotes</span>
+                                <strong>{total_pacotes_proxima}</strong>
+                            </div>
+                            <div class="premium-stat">
+                                <span>Progresso</span>
+                                <strong>{progresso_parada_pct}%</strong>
+                            </div>
+                        </div>
                     </div>
-                    <div class="premium-stat">
-                        <span>Pacotes</span>
-                        <strong>{total_pacotes_proxima}</strong>
-                    </div>
-                    <div class="premium-stat">
-                        <span>Distancia</span>
-                        <strong>{distancia_proxima:.2f} km</strong>
-                    </div>
-                    <div class="premium-stat">
-                        <span>ETA</span>
-                        <strong>{eta_minutos} min</strong>
-                    </div>
-                    <div class="premium-stat">
-                        <span>Progresso</span>
-                        <strong>{progresso_parada_pct}%</strong>
-                    </div>
-                    <div class="premium-stat">
-                        <span>Região</span>
-                        <strong>{progresso_regiao_pct}%</strong>
-                    </div>
-                    <div class="premium-stat">
-                        <span>Total rota</span>
-                        <strong>{int(progresso_rota * 100)}%</strong>
+                    <div class="premium-grid">
+                        <div class="premium-stat featured">
+                            <span>ETA</span>
+                            <strong>{eta_minutos} min</strong>
+                        </div>
+                        <div class="premium-stat featured">
+                            <span>Distância</span>
+                            <strong>{distancia_proxima:.2f} km</strong>
+                        </div>
+                        <div class="premium-stat">
+                            <span>Região atual</span>
+                            <strong>{regiao_numero}</strong>
+                        </div>
                     </div>
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True
         )
+
+        with st.container(border=True):
+            st.markdown("**Operação da rota**")
+            col_op1, col_op2, col_op3 = st.columns(3)
+            col_op1.metric("KM total", f"{km_inteligente:.1f} km")
+            col_op2.metric("KM restante", f"{km_restante:.1f} km")
+            col_op3.metric("Tempo total", formatar_tempo(tempo_inteligente))
+
+            col_op4, col_op5, col_op6 = st.columns(3)
+            col_op4.metric("Paradas", total_paradas)
+            col_op5.metric("Concluídas", paradas_concluidas)
+            col_op6.metric("Pacotes", total_pacotes)
+
+            col_op7, col_op8 = st.columns(2)
+            col_op7.metric("Pacotes concluídos", pacotes_concluidos)
+            col_op8.metric("Total rota", progresso_rota_pct)
+
+        with st.container(border=True):
+            st.markdown("**Progresso operacional**")
+            col_prog1, col_prog2 = st.columns(2)
+
+            with col_prog1:
+                st.caption(f"Região: {progresso_regiao_pct}")
+                st.progress(min(max(progresso_regiao, 0), 1))
+
+            with col_prog2:
+                st.caption(f"Total rota: {progresso_rota_pct}")
+                st.progress(min(max(progresso_rota, 0), 1))
 
         acao_1, acao_2, acao_3 = st.columns(3, gap="small")
 
@@ -3531,4 +3698,4 @@ if False:
     exibir_dashboard_gerencial()
 
 if False:
-    exibir_gestao_usuarios()
+    exibir_gestao_usuarios()s
