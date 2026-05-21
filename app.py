@@ -1532,9 +1532,9 @@ else:
     origem_rota = st.radio(
         "Como deseja criar a rota?",
         [
-            "Importar romaneio",
-            "Importar planilha padrão",
-            "Cadastrar entregas manualmente"
+            "Tenho uma planilha da Shopee / Mercado Livre",
+            "Tenho uma planilha organizada",
+            "Vou digitar os endereços um a um"
         ],
         horizontal=True,
         key="origem_nova_rota"
@@ -1542,7 +1542,7 @@ else:
 
     arquivo = None
 
-    if origem_rota in ["Importar romaneio", "Importar planilha padrão"]:
+    if origem_rota in ["Tenho uma planilha da Shopee / Mercado Livre", "Tenho uma planilha organizada"]:
         arquivo = st.file_uploader(
             "Envie a planilha da rota",
             type=["xlsx"],
