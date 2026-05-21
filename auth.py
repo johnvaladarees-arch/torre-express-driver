@@ -11,7 +11,7 @@ from database import DB_PATH
 
 
 BASE_DIR = Path(__file__).resolve().parent
-LOGO_PATH = BASE_DIR / "assets" / "logo.png"
+LOGO_PATH = BASE_DIR / "logo.png"
 
 
 def exibir_logo_auth(width=330):
