@@ -2010,28 +2010,30 @@ if arquivo or df_base_manual is not None:
         value=True
     )
 
-    lat_motorista = st.sidebar.number_input(
-        "Latitude atual",
-        value=-26.9194,
-        format="%.6f"
-    )
-
-    lon_motorista = st.sidebar.number_input(
-        "Longitude atual",
-        value=-49.0661,
-        format="%.6f"
-    )
-
-    velocidade_media = st.sidebar.slider(
-        "Velocidade média",
-        min_value=10,
-        max_value=80,
-        value=35
-    )
-
-    st.session_state.lat_motorista = lat_motorista
-    st.session_state.lon_motorista = lon_motorista
-    st.session_state.velocidade_media = velocidade_media
+    if usuario_tem_acesso("admin", "gestor"):
+        lat_motorista = st.sidebar.number_input(
+            "Latitude atual",
+            value=float(st.session_state.get("lat_motorista", -26.9194)),
+            format="%.6f"
+        )
+        lon_motorista = st.sidebar.number_input(
+            "Longitude atual",
+            value=float(st.session_state.get("lon_motorista", -49.0661)),
+            format="%.6f"
+        )
+        velocidade_media = st.sidebar.slider(
+            "Velocidade média",
+            min_value=10,
+            max_value=80,
+            value=int(st.session_state.get("velocidade_media", 35))
+        )
+        st.session_state.lat_motorista = lat_motorista
+        st.session_state.lon_motorista = lon_motorista
+        st.session_state.velocidade_media = velocidade_media
+    else:
+        lat_motorista = float(st.session_state.get("lat_motorista", -26.9194))
+        lon_motorista = float(st.session_state.get("lon_motorista", -49.0661))
+        velocidade_media = int(st.session_state.get("velocidade_media", 35))
 
     busca_pedido = st.sidebar.text_input(
         "Buscar pedido",
@@ -3272,7 +3274,8 @@ if arquivo or df_base_manual is not None:
 
                 if st.button(
                     "Entregar tudo",
-                    key=f"entregar_{i}"
+                    key=f"entregar_{i}",
+                    use_container_width=True
                 ):
 
                     horario = datetime.now().strftime(
@@ -3322,7 +3325,8 @@ if arquivo or df_base_manual is not None:
 
                 if st.button(
                     "Recusar tudo",
-                    key=f"recusar_{i}"
+                    key=f"recusar_{i}",
+                    use_container_width=True
                 ):
 
                     horario = datetime.now().strftime(
@@ -3407,32 +3411,15 @@ if arquivo or df_base_manual is not None:
 
                     status = pacote["Status"]
                     codigo_pacote = str(pacote.get(col_spx, pacote.get("SPX TN", "")))
-                    endereco_pacote = str(pacote.get(col_endereco, endereco))
-                    endereco_curto = (
-                        endereco_pacote[:92] + "..."
-                        if len(endereco_pacote) > 95
-                        else endereco_pacote
-                    )
+
+                    st.write(f"**Código/Pedido:** {codigo_pacote}")
 
                     if status == "Entregue":
-
-                        st.success(
-                            f"{codigo_pacote} - Entregue"
-                        )
-
+                        st.success("Status atual: Entregue")
                     elif status == "Recusado":
-
-                        st.error(
-                            f"{codigo_pacote} - Recusado"
-                        )
-
+                        st.error("Status atual: Recusado")
                     else:
-
-                        st.warning(
-                            f"{codigo_pacote} - Pendente"
-                        )
-
-                    st.caption(endereco_curto)
+                        st.warning("Status atual: Pendente")
 
                     col_fast_1, col_fast_2 = st.columns(
                         [1, 1],
@@ -3472,20 +3459,14 @@ if arquivo or df_base_manual is not None:
                     if horario_baixa.lower() == "nan":
                         horario_baixa = ""
 
-                    detalhes_pacote.write(f"**Código/Pedido:** {pacote[col_spx]}")
-                    detalhes_pacote.write(f"**Status atual:** {status}")
                     detalhes_pacote.write(
-                        f"**Endereço:** {pacote[col_endereco]}"
+                        f"**Endereço completo:** {pacote[col_endereco]}"
                     )
 
                     if col_sequencia is not None:
                         detalhes_pacote.write(
                             f"**Sequência original:** {pacote[col_sequencia]}"
                         )
-
-                    detalhes_pacote.write(
-                        f"**Latitude/Longitude:** {pacote[col_lat]} / {pacote[col_lon]}"
-                    )
 
                     if horario_baixa:
                         detalhes_pacote.write(
