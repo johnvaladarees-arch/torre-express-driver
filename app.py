@@ -1307,6 +1307,9 @@ st.markdown(
             max-width: min(235px, 94%);
             height: auto;
             object-fit: contain;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 6px 10px;
         }
 
         section[data-testid="stSidebar"] h1,
