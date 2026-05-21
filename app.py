@@ -2697,9 +2697,8 @@ if arquivo or df_base_manual is not None:
             lon_motorista
         ) if len(paradas_pendentes_df) > 0 else 0
         maps_url_proxima = (
-            "https://www.google.com/maps/dir/?api=1"
-            f"&destination={proxima_parada[col_lat]},{proxima_parada[col_lon]}"
-            f"&travelmode=driving"
+            "https://www.google.com/maps/search/?api=1"
+            f"&query={proxima_parada[col_lat]},{proxima_parada[col_lon]}"
         )
 
         alerta_regiao = st.session_state.pop(
@@ -2806,7 +2805,7 @@ if arquivo or df_base_manual is not None:
         acao_1, acao_2, acao_3 = st.columns(3, gap="small")
 
         with acao_1:
-            st.link_button("Abrir Maps", maps_url_proxima, type="secondary")
+            st.link_button("Navegar", maps_url_proxima, type="secondary")
 
         with acao_2:
             if st.button(
@@ -3321,13 +3320,12 @@ if arquivo or df_base_manual is not None:
                 st.warning(f"Status da parada: {status_parada}")
 
             maps_url = (
-                "https://www.google.com/maps/dir/?api=1"
-                f"&destination={row[col_lat]},{row[col_lon]}"
-                f"&travelmode=driving"
+                "https://www.google.com/maps/search/?api=1"
+                f"&query={row[col_lat]},{row[col_lon]}"
             )
 
             st.link_button(
-                "Abrir no Google Maps",
+                "Navegar até este endereço",
                 maps_url,
                 use_container_width=True
             )
