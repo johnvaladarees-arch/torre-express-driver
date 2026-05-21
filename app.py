@@ -3600,9 +3600,8 @@ if arquivo or df_base_manual is not None:
                         ] = pod_assinatura
                         salvar_snapshot_operacional()
 
-                    pod_foto = detalhes_pacote.file_uploader(
+                    pod_foto = detalhes_pacote.camera_input(
                         "Foto da entrega",
-                        type=["png", "jpg", "jpeg"],
                         key=f"pod_foto_{idx}"
                     )
 
@@ -3615,11 +3614,11 @@ if arquivo or df_base_manual is not None:
                         st.session_state.df_rota.loc[
                             idx,
                             "POD_Foto_Nome"
-                        ] = pod_foto.name
+                        ] = f"foto_pod_{idx}.jpg"
                         salvar_snapshot_operacional()
                         detalhes_pacote.image(
                             foto_bytes,
-                            caption=pod_foto.name,
+                            caption="Foto registrada",
                             width=180
                         )
                     elif pod_foto_atual:
