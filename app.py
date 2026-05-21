@@ -2072,60 +2072,6 @@ if arquivo or df_base_manual is not None:
         value=True
     )
 
-    # Botão GPS via streamlit-js-eval
-    st.sidebar.markdown("**Minha localização**")
-
-    gps_html = """
-    <script>
-    function capturarGPS() {
-        const btn = document.getElementById('btn-gps');
-        btn.innerText = '⏳ Aguardando GPS...';
-        btn.disabled = true;
-        if (!navigator.geolocation) {
-            btn.innerText = '❌ GPS indisponível';
-            btn.disabled = false;
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            function(pos) {
-                const lat = pos.coords.latitude.toFixed(6);
-                const lon = pos.coords.longitude.toFixed(6);
-                btn.innerText = '✅ ' + lat + ', ' + lon;
-                // Preenche campos ocultos e submete
-                document.getElementById('hidden-lat').value = lat;
-                document.getElementById('hidden-lon').value = lon;
-                document.getElementById('gps-form').submit();
-            },
-            function(err) {
-                btn.innerText = '❌ Permita o acesso ao GPS';
-                btn.disabled = false;
-            },
-            {enableHighAccuracy: true, timeout: 15000}
-        );
-    }
-    </script>
-    <form id="gps-form" method="GET" action="">
-        <input type="hidden" id="hidden-lat" name="gps_lat" value="">
-        <input type="hidden" id="hidden-lon" name="gps_lon" value="">
-        <button type="button" id="btn-gps" onclick="capturarGPS()"
-            style="background:#f97316;color:white;border:none;border-radius:8px;
-                   padding:10px 16px;font-size:0.95rem;cursor:pointer;width:100%;margin-bottom:4px;">
-            📍 Usar minha localização
-        </button>
-    </form>
-    """
-    components.html(gps_html, height=55)
-
-    params = st.query_params
-    if "gps_lat" in params and "gps_lon" in params:
-        try:
-            st.session_state.lat_motorista = float(params["gps_lat"])
-            st.session_state.lon_motorista = float(params["gps_lon"])
-            st.query_params.clear()
-            st.sidebar.success("📍 Localização atualizada!")
-        except Exception:
-            pass
-
     if usuario_tem_acesso("admin", "gestor"):
         lat_motorista = st.sidebar.number_input(
             "Latitude atual",
