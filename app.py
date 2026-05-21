@@ -1532,9 +1532,9 @@ else:
     origem_rota = st.radio(
         "Como deseja criar a rota?",
         [
-            "Tenho uma planilha da Shopee / Mercado Livre",
-            "Tenho uma planilha organizada",
-            "Vou digitar os endereços um a um"
+            "Importar romaneio",
+            "Importar planilha padrão",
+            "Cadastrar entregas manualmente"
         ],
         horizontal=True,
         key="origem_nova_rota"
@@ -1542,7 +1542,7 @@ else:
 
     arquivo = None
 
-    if origem_rota in ["Tenho uma planilha da Shopee / Mercado Livre", "Tenho uma planilha organizada"]:
+    if origem_rota in ["Importar romaneio", "Importar planilha padrão"]:
         arquivo = st.file_uploader(
             "Envie a planilha da rota",
             type=["xlsx"],
@@ -1774,8 +1774,67 @@ if arquivo or df_base_manual is not None:
     )
 
     if col_lat is None or col_lon is None:
-        st.error("Não encontrei latitude e longitude.")
-        st.stop()
+        # Tentar geocodificar usando Google Maps API
+        google_key = st.secrets.get("GOOGLE_MAPS_KEY", "")
+        if not google_key:
+            st.error("Planilha sem coordenadas e chave do Google Maps não configurada.")
+            st.stop()
+
+        if col_endereco is None:
+            st.error("Não encontrei coluna de endereço para geocodificar.")
+            st.stop()
+
+        import requests
+
+        st.info("Geocodificando endereços automaticamente... Aguarde.")
+
+        lats = []
+        lons = []
+        erros = 0
+
+        for _, row in df_base.iterrows():
+            endereco_geo = str(row.get(col_endereco if col_endereco else "", ""))
+            if not endereco_geo or endereco_geo == "nan":
+                lats.append(None)
+                lons.append(None)
+                erros += 1
+                continue
+            try:
+                resp = requests.get(
+                    "https://maps.googleapis.com/maps/api/geocode/json",
+                    params={"address": endereco_geo, "key": google_key},
+                    timeout=5
+                )
+                resultado = resp.json()
+                if resultado.get("status") == "OK":
+                    loc = resultado["results"][0]["geometry"]["location"]
+                    lats.append(loc["lat"])
+                    lons.append(loc["lng"])
+                else:
+                    lats.append(None)
+                    lons.append(None)
+                    erros += 1
+            except Exception:
+                lats.append(None)
+                lons.append(None)
+                erros += 1
+
+        df_base["Latitude"] = lats
+        df_base["Longitude"] = lons
+
+        lat_padrao = float(st.session_state.get("lat_motorista", -26.9194))
+        lon_padrao = float(st.session_state.get("lon_motorista", -49.0661))
+        df_base["Latitude"] = pd.to_numeric(df_base["Latitude"], errors="coerce").fillna(lat_padrao)
+        df_base["Longitude"] = pd.to_numeric(df_base["Longitude"], errors="coerce").fillna(lon_padrao)
+
+        col_lat = "Latitude"
+        col_lon = "Longitude"
+
+        if erros > 0:
+            st.warning(f"{erros} endereço(s) não foram geocodificados e usarão a localização padrão.")
+        else:
+            st.success("Todos os endereços foram geocodificados com sucesso!")
+
 
     if col_endereco is None:
         st.error("Não encontrei coluna de endereço.")
