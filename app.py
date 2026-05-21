@@ -1421,7 +1421,19 @@ st.markdown(
             }
 
             div[data-testid="stMetric"] {
-                padding: 0.38rem 0.45rem;
+                padding: 0.28rem 0.35rem;
+            }
+
+            div[data-testid="stMetric"] label {
+                font-size: 0.7rem !important;
+            }
+
+            div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+                font-size: 1.1rem !important;
+            }
+
+            div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] {
+                gap: 0.3rem !important;
             }
         }
     </style>
@@ -2754,10 +2766,7 @@ if arquivo or df_base_manual is not None:
                             <span>Distância</span>
                             <strong>{distancia_proxima:.2f} km</strong>
                         </div>
-                        <div class="premium-stat">
-                            <span>Região atual</span>
-                            <strong>{regiao_numero}</strong>
-                        </div>
+
                     </div>
                 </div>
 
