@@ -1261,6 +1261,31 @@ st.markdown(
 
         section[data-testid="stSidebar"] {
             background: var(--torre-azul);
+            min-width: 310px !important;
+            width: 310px !important;
+        }
+
+        section[data-testid="stSidebar"] > div {
+            min-width: 310px !important;
+            width: 310px !important;
+        }
+
+        .sidebar-logo-shell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.05rem 0.35rem 1.15rem;
+            margin: 0 auto 0.45rem;
+            width: 100%;
+        }
+
+        .sidebar-logo-img {
+            display: block;
+            width: min(260px, 94%);
+            max-width: 260px;
+            height: auto;
+            object-fit: contain;
+            image-rendering: auto;
         }
 
         div[data-testid="stImage"] {
@@ -1364,7 +1389,18 @@ st.markdown(
             border-radius: 8px;
         }
 
-        @media (max-width: 720px) {
+            @media (max-width: 720px) {
+            section[data-testid="stSidebar"],
+            section[data-testid="stSidebar"] > div {
+                width: min(88vw, 310px) !important;
+                min-width: min(88vw, 310px) !important;
+            }
+
+            .sidebar-logo-img {
+                width: min(250px, 92%);
+                max-width: 250px;
+            }
+
             .block-container {
                 padding-left: 0.65rem;
                 padding-right: 0.65rem;
@@ -1373,6 +1409,12 @@ st.markdown(
 
             div[data-testid="column"] {
                 min-width: 0 !important;
+            }
+
+            div[data-testid="stButton"] button,
+            div[data-testid="stLinkButton"] a {
+                min-height: 58px;
+                font-size: 1rem;
             }
 
             div[data-testid="stMetric"] {
@@ -2016,6 +2058,68 @@ if arquivo or df_base_manual is not None:
         except Exception as erro:
             st.session_state["erro_autosalvamento"] = str(erro)
 
+    def atualizar_status_pacote(idx_pacote, novo_status):
+
+        horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+        st.session_state.df_rota.loc[idx_pacote, "Status"] = novo_status
+
+        if novo_status == "Entregue":
+            st.session_state.df_rota.loc[idx_pacote, "Ocorrencia"] = ""
+            st.session_state.df_rota.loc[idx_pacote, "Horario_Baixa"] = horario
+            st.session_state.df_rota.loc[
+                idx_pacote,
+                "POD_Horario_Entrega"
+            ] = horario
+            st.session_state.df_rota.loc[
+                idx_pacote,
+                "POD_Latitude_Baixa"
+            ] = lat_baixa
+            st.session_state.df_rota.loc[
+                idx_pacote,
+                "POD_Longitude_Baixa"
+            ] = lon_baixa
+
+        elif novo_status == "Recusado":
+            ocorrencia_salvar = st.session_state.df_rota.loc[
+                idx_pacote,
+                "Ocorrencia"
+            ]
+            if (
+                pd.isna(ocorrencia_salvar)
+                or str(ocorrencia_salvar).strip() == ""
+            ):
+                st.session_state.df_rota.loc[
+                    idx_pacote,
+                    "Ocorrencia"
+                ] = "Outros"
+
+            st.session_state.df_rota.loc[idx_pacote, "Horario_Baixa"] = horario
+            st.session_state.df_rota.loc[
+                idx_pacote,
+                "POD_Latitude_Baixa"
+            ] = lat_baixa
+            st.session_state.df_rota.loc[
+                idx_pacote,
+                "POD_Longitude_Baixa"
+            ] = lon_baixa
+
+        else:
+            st.session_state.df_rota.loc[idx_pacote, "Ocorrencia"] = ""
+            st.session_state.df_rota.loc[idx_pacote, "Horario_Baixa"] = ""
+            for coluna_pod_limpar in [
+                "POD_Horario_Entrega",
+                "POD_Foto",
+                "POD_Foto_Nome",
+                "POD_Recebedor",
+                "POD_Assinatura",
+                "POD_Latitude_Baixa",
+                "POD_Longitude_Baixa"
+            ]:
+                st.session_state.df_rota.loc[idx_pacote, coluna_pod_limpar] = ""
+
+        salvar_snapshot_operacional()
+
     total_pacotes = len(df)
 
     entregues = len(
@@ -2378,6 +2482,42 @@ if arquivo or df_base_manual is not None:
                 color: #ffffff !important;
             }
 
+            button[aria-label="Entregue"] {
+                background: #16a34a !important;
+                border-color: #16a34a !important;
+                color: #ffffff !important;
+            }
+
+            button[aria-label="Entregue"]:hover {
+                background: #15803d !important;
+                border-color: #15803d !important;
+                color: #ffffff !important;
+            }
+
+            button[aria-label="Recusado"] {
+                background: #dc2626 !important;
+                border-color: #dc2626 !important;
+                color: #ffffff !important;
+            }
+
+            button[aria-label="Recusado"]:hover {
+                background: #b91c1c !important;
+                border-color: #b91c1c !important;
+                color: #ffffff !important;
+            }
+
+            button[aria-label="Pendente"] {
+                background: #334155 !important;
+                border-color: #334155 !important;
+                color: #ffffff !important;
+            }
+
+            button[aria-label="Pendente"]:hover {
+                background: #1e293b !important;
+                border-color: #1e293b !important;
+                color: #ffffff !important;
+            }
+
             @media (max-width: 900px) {
                 .premium-hero-grid,
                 .premium-progress-grid {
@@ -2589,6 +2729,14 @@ if arquivo or df_base_manual is not None:
             with col_prog2:
                 st.caption(f"Total rota: {progresso_rota_pct}")
                 st.progress(min(max(progresso_rota, 0), 1))
+
+        with st.container(border=True):
+            st.markdown("**Parada atual**")
+            st.write(f"**{endereco_proxima}**")
+            st.caption(f"{bairro_proximo} | Região {regiao_numero} - {regiao_nome}")
+            st.metric("Pacotes pendentes nesta parada", int(
+                status_por_parada.at[chave_proxima_painel, "Pendente"]
+            ) if chave_proxima_painel in status_por_parada.index else 0)
 
         acao_1, acao_2, acao_3 = st.columns(3, gap="small")
 
@@ -3091,32 +3239,14 @@ if arquivo or df_base_manual is not None:
                     "Próxima parada em destaque"
                 )
 
-            if "Bairro" in row and "City" in row:
-                st.caption(
-                    f"{row['Bairro']} - {row['City']}"
-                )
-
-            st.caption(
-                f" {entregues_parada}/{total_parada}"
-            )
-
             bairro = row["Bairro"] if "Bairro" in row else "-"
             cidade = row["City"] if "City" in row else "-"
 
-            st.write(f"**Bairro/Cidade:** {bairro} - {cidade}")
-            st.write(
-                f"**Região operacional:** {row.get('_Regiao_Operacional', '-')} - {row.get('_Nome_Regiao', '-')}"
-            )
-            st.write(
-                f"**Latitude/Longitude:** {row[col_lat]}, {row[col_lon]}"
-            )
-            st.write(f"**Total de pacotes:** {total_parada}")
-            st.write(
-                f"**Entregues/Total:** {entregues_parada}/{total_parada}"
-            )
-            st.write(f"**Pendentes:** {pendentes_parada}")
-            st.write(f"**Recusados:** {recusados_parada}")
-            st.write(f"**SLA da parada:** {sla_parada}%")
+            st.caption(f"{bairro} - {cidade}")
+            col_res1, col_res2, col_res3 = st.columns(3)
+            col_res1.metric("Pacotes", total_parada)
+            col_res2.metric("Pendentes", pendentes_parada)
+            col_res3.metric("SLA", f"{sla_parada}%")
 
             if status_parada == "Finalizada":
                 st.success(f"Status da parada: {status_parada}")
@@ -3132,7 +3262,8 @@ if arquivo or df_base_manual is not None:
 
             st.link_button(
                 "Abrir no Google Maps",
-                maps_url
+                maps_url,
+                use_container_width=True
             )
 
             col_a, col_b = st.columns(2)
@@ -3275,24 +3406,64 @@ if arquivo or df_base_manual is not None:
                 for idx, pacote in pacotes_render.iterrows():
 
                     status = pacote["Status"]
+                    codigo_pacote = str(pacote.get(col_spx, pacote.get("SPX TN", "")))
+                    endereco_pacote = str(pacote.get(col_endereco, endereco))
+                    endereco_curto = (
+                        endereco_pacote[:92] + "..."
+                        if len(endereco_pacote) > 95
+                        else endereco_pacote
+                    )
 
                     if status == "Entregue":
 
                         st.success(
-                            f"{pacote['SPX TN']} - Entregue"
+                            f"{codigo_pacote} - Entregue"
                         )
 
                     elif status == "Recusado":
 
                         st.error(
-                            f"{pacote['SPX TN']} - Recusado"
+                            f"{codigo_pacote} - Recusado"
                         )
 
                     else:
 
                         st.warning(
-                            f"{pacote['SPX TN']} - Pendente"
+                            f"{codigo_pacote} - Pendente"
                         )
+
+                    st.caption(endereco_curto)
+
+                    col_fast_1, col_fast_2 = st.columns(
+                        [1, 1],
+                        gap="medium"
+                    )
+
+                    with col_fast_1:
+                        if st.button(
+                            "Entregue",
+                            key=f"fast_ent_{idx}",
+                            type="primary",
+                            use_container_width=True
+                        ):
+                            atualizar_status_pacote(idx, "Entregue")
+                            st.rerun()
+
+                    with col_fast_2:
+                        if st.button(
+                            "Recusado",
+                            key=f"fast_rec_{idx}",
+                            type="primary",
+                            use_container_width=True
+                        ):
+                            atualizar_status_pacote(idx, "Recusado")
+                            st.rerun()
+
+                    detalhes_pacote = (
+                        st.popover("Detalhes")
+                        if hasattr(st, "popover")
+                        else st.container(border=True)
+                    )
 
                     horario_baixa = str(
                         pacote.get("Horario_Baixa", "")
@@ -3301,22 +3472,27 @@ if arquivo or df_base_manual is not None:
                     if horario_baixa.lower() == "nan":
                         horario_baixa = ""
 
-                    st.write(f"**Codigo SPX:** {pacote[col_spx]}")
-                    st.write(f"**Status atual:** {status}")
-                    st.write(
-                        f"**Endereço original:** {pacote[col_endereco]}"
+                    detalhes_pacote.write(f"**Código/Pedido:** {pacote[col_spx]}")
+                    detalhes_pacote.write(f"**Status atual:** {status}")
+                    detalhes_pacote.write(
+                        f"**Endereço:** {pacote[col_endereco]}"
                     )
 
                     if col_sequencia is not None:
-                        st.write(
+                        detalhes_pacote.write(
                             f"**Sequência original:** {pacote[col_sequencia]}"
                         )
 
-                    st.write(
-                        f"**Horario da baixa:** {horario_baixa or '-'}"
+                    detalhes_pacote.write(
+                        f"**Latitude/Longitude:** {pacote[col_lat]} / {pacote[col_lon]}"
                     )
 
-                    st.write("**Prova de Entrega (POD)**")
+                    if horario_baixa:
+                        detalhes_pacote.write(
+                            f"**Horário da baixa:** {horario_baixa}"
+                        )
+
+                    detalhes_pacote.write("**Prova de Entrega (POD)**")
 
                     pod_recebedor_atual = str(
                         pacote.get("POD_Recebedor", "")
@@ -3355,7 +3531,7 @@ if arquivo or df_base_manual is not None:
                     if pod_longitude_baixa.lower() == "nan":
                         pod_longitude_baixa = ""
 
-                    pod_recebedor = st.text_input(
+                    pod_recebedor = detalhes_pacote.text_input(
                         "Nome do recebedor",
                         value=pod_recebedor_atual,
                         key=f"pod_recebedor_{idx}"
@@ -3368,7 +3544,7 @@ if arquivo or df_base_manual is not None:
                         ] = pod_recebedor
                         salvar_snapshot_operacional()
 
-                    pod_assinatura = st.text_input(
+                    pod_assinatura = detalhes_pacote.text_input(
                         "Assinatura digitada",
                         value=pod_assinatura_atual,
                         key=f"pod_assinatura_{idx}"
@@ -3381,7 +3557,7 @@ if arquivo or df_base_manual is not None:
                         ] = pod_assinatura
                         salvar_snapshot_operacional()
 
-                    pod_foto = st.file_uploader(
+                    pod_foto = detalhes_pacote.file_uploader(
                         "Foto da entrega",
                         type=["png", "jpg", "jpeg"],
                         key=f"pod_foto_{idx}"
@@ -3398,23 +3574,20 @@ if arquivo or df_base_manual is not None:
                             "POD_Foto_Nome"
                         ] = pod_foto.name
                         salvar_snapshot_operacional()
-                        st.image(foto_bytes, caption=pod_foto.name, width=180)
+                        detalhes_pacote.image(
+                            foto_bytes,
+                            caption=pod_foto.name,
+                            width=180
+                        )
                     elif pod_foto_atual:
                         try:
-                            st.image(
+                            detalhes_pacote.image(
                                 base64.b64decode(pod_foto_atual),
                                 caption=pod_foto_nome_atual or "Foto POD",
                                 width=180
                             )
                         except Exception:
-                            st.caption("Foto POD salva.")
-
-                    st.write(
-                        f"**Horário entrega POD:** {pod_horario_entrega or '-'}"
-                    )
-                    st.write(
-                        f"**Latitude/Longitude baixa:** {pod_latitude_baixa or '-'} / {pod_longitude_baixa or '-'}"
-                    )
+                            detalhes_pacote.caption("Foto POD salva.")
 
                     ocorrencia_atual = str(
                         pacote.get("Ocorrencia", "")
@@ -3427,7 +3600,7 @@ if arquivo or df_base_manual is not None:
                         status == "Recusado"
                         and ocorrencia_atual == ""
                     ):
-                        st.warning(
+                        detalhes_pacote.warning(
                             "Informe uma ocorrência para esta recusa."
                         )
 
@@ -3438,7 +3611,7 @@ if arquivo or df_base_manual is not None:
                     else:
                         ocorrencia_idx = 0
 
-                    ocorrencia = st.selectbox(
+                    ocorrencia = detalhes_pacote.selectbox(
                         "Ocorrência",
                         opcoes_ocorrencia,
                         index=ocorrencia_idx,
@@ -3459,7 +3632,7 @@ if arquivo or df_base_manual is not None:
                     if observacao_atual.lower() == "nan":
                         observacao_atual = ""
 
-                    observacao = st.text_area(
+                    observacao = detalhes_pacote.text_area(
                         "Observação",
                         value=observacao_atual,
                         key=f"obs_{idx}",
@@ -3473,161 +3646,7 @@ if arquivo or df_base_manual is not None:
                         ] = observacao
                         salvar_snapshot_operacional()
 
-                    col_s1, col_s2, col_s3 = st.columns(3)
-
-                    with col_s1:
-
-                        if st.button(
-                            "Entregue",
-                            key=f"ent_{idx}"
-                        ):
-
-                            horario = datetime.now().strftime(
-                                "%d/%m/%Y %H:%M:%S"
-                            )
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Status"
-                            ] = "Entregue"
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Ocorrencia"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Horario_Baixa"
-                            ] = horario
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Horario_Entrega"
-                            ] = horario
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Latitude_Baixa"
-                            ] = lat_baixa
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Longitude_Baixa"
-                            ] = lon_baixa
-
-                            salvar_snapshot_operacional()
-                            st.rerun()
-
-                    with col_s2:
-
-                        if st.button(
-                            "Recusado",
-                            key=f"rec_{idx}"
-                        ):
-
-                            horario = datetime.now().strftime(
-                                "%d/%m/%Y %H:%M:%S"
-                            )
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Status"
-                            ] = "Recusado"
-
-                            ocorrencia_salvar = st.session_state.df_rota.loc[
-                                idx,
-                                "Ocorrencia"
-                            ]
-
-                            if (
-                                pd.isna(ocorrencia_salvar)
-                                or str(ocorrencia_salvar).strip() == ""
-                            ):
-                                st.session_state.df_rota.loc[
-                                    idx,
-                                    "Ocorrencia"
-                                ] = "Outros"
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Horario_Baixa"
-                            ] = horario
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Latitude_Baixa"
-                            ] = lat_baixa
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Longitude_Baixa"
-                            ] = lon_baixa
-
-                            salvar_snapshot_operacional()
-                            st.rerun()
-
-                    with col_s3:
-
-                        if st.button(
-                            "Pendente",
-                            key=f"pen_{idx}"
-                        ):
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Status"
-                            ] = "Pendente"
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Ocorrencia"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "Horario_Baixa"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Horario_Entrega"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Foto"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Foto_Nome"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Recebedor"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Assinatura"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Latitude_Baixa"
-                            ] = ""
-
-                            st.session_state.df_rota.loc[
-                                idx,
-                                "POD_Longitude_Baixa"
-                            ] = ""
-
-                            salvar_snapshot_operacional()
-                            st.rerun()
-
-                    st.divider()
+                    detalhes_pacote.divider()
 
     st.divider()
 
