@@ -2072,6 +2072,70 @@ if arquivo or df_base_manual is not None:
         value=True
     )
 
+    # Botão de localização automática via GPS para todos os perfis
+    st.sidebar.markdown("**Minha localização**")
+    col_gps1, col_gps2 = st.sidebar.columns([2, 1])
+
+    with col_gps1:
+        st.sidebar.markdown(
+            """
+            <div id="gps-status" style="font-size:0.8rem; color:#6b7280; margin-bottom:4px;">
+                Toque em 📍 para usar o GPS
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # JavaScript para capturar GPS
+    import streamlit.components.v1 as components
+    gps_html = """
+    <script>
+    function capturarGPS() {
+        const btn = document.getElementById('btn-gps');
+        btn.innerText = '⏳ Aguardando...';
+        btn.disabled = true;
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lon = pos.coords.longitude.toFixed(6);
+                    // Envia para o Streamlit via query param
+                    const url = new URL(window.parent.location.href);
+                    url.searchParams.set('gps_lat', lat);
+                    url.searchParams.set('gps_lon', lon);
+                    window.parent.location.href = url.toString();
+                },
+                function(err) {
+                    btn.innerText = '❌ Erro GPS';
+                    btn.disabled = false;
+                },
+                {enableHighAccuracy: true, timeout: 10000}
+            );
+        } else {
+            btn.innerText = '❌ GPS indisponível';
+            btn.disabled = false;
+        }
+    }
+    </script>
+    <button id="btn-gps" onclick="capturarGPS()"
+        style="background:#f97316;color:white;border:none;border-radius:8px;
+               padding:8px 16px;font-size:0.9rem;cursor:pointer;width:100%;">
+        📍 Usar minha localização
+    </button>
+    """
+    components.html(gps_html, height=50)
+
+    # Ler coordenadas do GPS via query params se disponíveis
+    params = st.query_params
+    if "gps_lat" in params and "gps_lon" in params:
+        try:
+            st.session_state.lat_motorista = float(params["gps_lat"])
+            st.session_state.lon_motorista = float(params["gps_lon"])
+            st.query_params.clear()
+            st.sidebar.success("📍 Localização atualizada!")
+        except Exception:
+            pass
+
     if usuario_tem_acesso("admin", "gestor"):
         lat_motorista = st.sidebar.number_input(
             "Latitude atual",
