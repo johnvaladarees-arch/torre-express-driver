@@ -1540,26 +1540,115 @@ if (
 ):
     arquivo = BytesIO(st.session_state.romaneio_bytes)
 else:
-    st.subheader("Nova Rota")
-    origem_rota = st.radio(
-        "Como deseja criar a rota?",
-        [
-            "Importar romaneio",
-            "Importar planilha padrão",
-            "Cadastrar entregas manualmente"
-        ],
-        horizontal=True,
-        key="origem_nova_rota"
-    )
-
-    arquivo = None
-
-    if origem_rota in ["Importar romaneio", "Importar planilha padrão"]:
-        arquivo = st.file_uploader(
-            "Envie a planilha da rota",
-            type=["xlsx"],
-            key=f"upload_romaneio_{st.session_state.upload_romaneio_versao}"
+    # Layout mobile-first para motorista
+    if perfil_logado == "motorista":
+        st.markdown(
+            """
+            <style>
+            .mobile-upload-card {
+                background: #ffffff;
+                border: 2px dashed #f97316;
+                border-radius: 16px;
+                padding: 2rem 1.5rem;
+                text-align: center;
+                margin: 1rem 0;
+            }
+            .mobile-upload-title {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: #0b1f3a;
+                margin-bottom: 0.5rem;
+            }
+            .mobile-upload-sub {
+                font-size: 0.95rem;
+                color: #6b7280;
+                margin-bottom: 1.5rem;
+            }
+            .mobile-opcao-btn {
+                background: #f3f4f6;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                cursor: pointer;
+                width: 100%;
+                text-align: left;
+                font-size: 1rem;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
         )
+
+        nome_motorista = st.session_state["usuario_logado"]["nome"].split()[0]
+        st.markdown(
+            f"""
+            <div style="text-align:center; padding: 1rem 0 0.5rem;">
+                <div style="font-size:1.6rem; font-weight:700; color:#0b1f3a;">
+                    Olá, {nome_motorista}! 👋
+                </div>
+                <div style="font-size:1rem; color:#6b7280; margin-top:0.3rem;">
+                    Pronto para iniciar suas entregas?
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        origem_rota = st.radio(
+            "Qual é o seu romaneio?",
+            [
+                "📦 Tenho uma planilha da Shopee / Mercado Livre",
+                "📋 Tenho uma planilha organizada",
+                "✏️ Vou digitar os endereços um a um"
+            ],
+            key="origem_nova_rota"
+        )
+
+        arquivo = None
+
+        if origem_rota in [
+            "📦 Tenho uma planilha da Shopee / Mercado Livre",
+            "📋 Tenho uma planilha organizada"
+        ]:
+            st.markdown(
+                """
+                <div style="background:#fff7ed; border:1px solid #fed7aa;
+                     border-radius:12px; padding:1rem; margin-bottom:1rem;
+                     font-size:0.9rem; color:#9a3412;">
+                    📲 Salve a planilha no celular e selecione abaixo
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            arquivo = st.file_uploader(
+                "Selecionar planilha",
+                type=["xlsx"],
+                key=f"upload_romaneio_{st.session_state.upload_romaneio_versao}",
+                label_visibility="collapsed"
+            )
+
+    else:
+        st.subheader("Nova Rota")
+        origem_rota = st.radio(
+            "Como deseja criar a rota?",
+            [
+                "Tenho uma planilha da Shopee / Mercado Livre",
+                "Tenho uma planilha organizada",
+                "Vou digitar os endereços um a um"
+            ],
+            horizontal=True,
+            key="origem_nova_rota"
+        )
+
+        arquivo = None
+
+        if origem_rota in ["Tenho uma planilha da Shopee / Mercado Livre", "Tenho uma planilha organizada", "📦 Tenho uma planilha da Shopee / Mercado Livre", "📋 Tenho uma planilha organizada"]:
+            arquivo = st.file_uploader(
+                "Envie a planilha da rota",
+                type=["xlsx"],
+                key=f"upload_romaneio_{st.session_state.upload_romaneio_versao}"
+            )
     else:
         if "entregas_manuais" not in st.session_state:
             st.session_state.entregas_manuais = []
