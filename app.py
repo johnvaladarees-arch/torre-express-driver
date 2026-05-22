@@ -1204,9 +1204,9 @@ if "usuario_logado" not in st.session_state:
 
 exibir_sidebar_usuario()
 
+perfil_logado = st.session_state["usuario_logado"]["perfil"]
+
 exibir_logo_principal()
-if perfil_logado != "motorista":
-    st.caption("Sistema operacional inteligente para motoristas")
 st.markdown(
     """
     <style>
@@ -1454,8 +1454,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-perfil_logado = st.session_state["usuario_logado"]["perfil"]
 
 if perfil_logado == "motorista":
     opcoes_menu = ["Operação", "Resumo da Rota", "Sobre a Plataforma"]
