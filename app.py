@@ -1992,6 +1992,21 @@ if arquivo or df_base_manual is not None:
         if "POD_Longitude_Baixa" not in df_base.columns:
             df_base["POD_Longitude_Baixa"] = ""
 
+        if "ENL_Foto" not in df_base.columns:
+            df_base["ENL_Foto"] = ""
+
+        if "ENL_Foto_Nome" not in df_base.columns:
+            df_base["ENL_Foto_Nome"] = ""
+
+        if "ENL_Observacao" not in df_base.columns:
+            df_base["ENL_Observacao"] = ""
+
+        if "ENL_Lat" not in df_base.columns:
+            df_base["ENL_Lat"] = ""
+
+        if "ENL_Lon" not in df_base.columns:
+            df_base["ENL_Lon"] = ""
+
         df_base["_Endereco_Normalizado"] = (
             df_base[col_endereco]
             .apply(normalizar_endereco)
@@ -2091,7 +2106,12 @@ if arquivo or df_base_manual is not None:
         "POD_Assinatura",
         "POD_Horario_Entrega",
         "POD_Latitude_Baixa",
-        "POD_Longitude_Baixa"
+        "POD_Longitude_Baixa",
+        "ENL_Foto",
+        "ENL_Foto_Nome",
+        "ENL_Observacao",
+        "ENL_Lat",
+        "ENL_Lon"
     ]
 
     for coluna_pod in colunas_pod:
@@ -2298,7 +2318,12 @@ if arquivo or df_base_manual is not None:
                 "POD_Recebedor",
                 "POD_Assinatura",
                 "POD_Latitude_Baixa",
-                "POD_Longitude_Baixa"
+                "POD_Longitude_Baixa",
+                "ENL_Foto",
+                "ENL_Foto_Nome",
+                "ENL_Observacao",
+                "ENL_Lat",
+                "ENL_Lon"
             ]:
                 st.session_state.df_rota.loc[idx_pacote, coluna_pod_limpar] = ""
 
@@ -3762,6 +3787,117 @@ if arquivo or df_base_manual is not None:
                             "Ocorrencia"
                         ] = ocorrencia
                         salvar_snapshot_operacional()
+
+                    # ── PROVA DE ENDEREÇO NÃO LOCALIZADO ──────────────────
+                    if ocorrencia == "Endereço não localizado":
+
+                        enl_foto_atual = str(pacote.get("ENL_Foto", ""))
+                        enl_foto_nome_atual = str(pacote.get("ENL_Foto_Nome", ""))
+                        enl_obs_atual = str(pacote.get("ENL_Observacao", ""))
+                        enl_lat_atual = str(pacote.get("ENL_Lat", ""))
+                        enl_lon_atual = str(pacote.get("ENL_Lon", ""))
+
+                        for _v in [enl_foto_atual, enl_foto_nome_atual,
+                                   enl_obs_atual, enl_lat_atual, enl_lon_atual]:
+                            if _v.lower() == "nan":
+                                _v = ""
+
+                        if enl_foto_atual.lower() == "nan":
+                            enl_foto_atual = ""
+                        if enl_foto_nome_atual.lower() == "nan":
+                            enl_foto_nome_atual = ""
+                        if enl_obs_atual.lower() == "nan":
+                            enl_obs_atual = ""
+                        if enl_lat_atual.lower() == "nan":
+                            enl_lat_atual = ""
+                        if enl_lon_atual.lower() == "nan":
+                            enl_lon_atual = ""
+
+                        enl_completo = (
+                            bool(enl_foto_atual)
+                            and bool(enl_obs_atual.strip())
+                        )
+
+                        detalhes_pacote.markdown("---")
+                        detalhes_pacote.markdown(
+                            "**📍 Prova de Endereço Não Localizado**"
+                        )
+
+                        if not enl_completo:
+                            detalhes_pacote.error(
+                                "⚠️ Foto do local e descrição são obrigatórios "
+                                "para endereço não localizado."
+                            )
+                        else:
+                            detalhes_pacote.success(
+                                "✅ Prova registrada com sucesso."
+                            )
+
+                        # Foto do local
+                        enl_foto_input = detalhes_pacote.camera_input(
+                            "📷 Foto do local (obrigatório)",
+                            key=f"enl_foto_{idx}"
+                        )
+
+                        if enl_foto_input is not None:
+                            enl_bytes = enl_foto_input.getvalue()
+                            st.session_state.df_rota.loc[
+                                idx, "ENL_Foto"
+                            ] = base64.b64encode(enl_bytes).decode("utf-8")
+                            st.session_state.df_rota.loc[
+                                idx, "ENL_Foto_Nome"
+                            ] = f"enl_foto_{idx}.jpg"
+                            # Registrar GPS no momento da foto
+                            st.session_state.df_rota.loc[
+                                idx, "ENL_Lat"
+                            ] = lat_baixa
+                            st.session_state.df_rota.loc[
+                                idx, "ENL_Lon"
+                            ] = lon_baixa
+                            salvar_snapshot_operacional()
+                            detalhes_pacote.image(
+                                enl_bytes,
+                                caption="Foto do local registrada",
+                                width=180
+                            )
+                        elif enl_foto_atual:
+                            try:
+                                detalhes_pacote.image(
+                                    base64.b64decode(enl_foto_atual),
+                                    caption=enl_foto_nome_atual or "Foto do local",
+                                    width=180
+                                )
+                            except Exception:
+                                detalhes_pacote.caption("Foto do local salva.")
+
+                        # Descrição obrigatória
+                        enl_obs = detalhes_pacote.text_area(
+                            "📝 Descreva o que encontrou (obrigatório)",
+                            value=enl_obs_atual,
+                            placeholder=(
+                                "Ex: Rua não existe no local, número não "
+                                "encontrado na fachada, área interditada..."
+                            ),
+                            key=f"enl_obs_{idx}",
+                            height=90
+                        )
+
+                        if enl_obs != enl_obs_atual:
+                            st.session_state.df_rota.loc[
+                                idx, "ENL_Observacao"
+                            ] = enl_obs
+                            salvar_snapshot_operacional()
+
+                        # GPS registrado
+                        if enl_lat_atual and enl_lon_atual:
+                            detalhes_pacote.caption(
+                                f"📡 GPS registrado: {enl_lat_atual}, {enl_lon_atual}"
+                            )
+                        else:
+                            detalhes_pacote.caption(
+                                "📡 GPS será registrado automaticamente ao tirar a foto."
+                            )
+                    # ── FIM PROVA ENL ──────────────────────────────────────
 
                     observacao_atual = str(
                         pacote.get("Observacao", "")
