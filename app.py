@@ -49,6 +49,43 @@ BASE_DIR = Path(__file__).resolve().parent
 LOGO_PATH = BASE_DIR / "logo.png"
 
 
+def haversine_metros(lat1, lon1, lat2, lon2):
+    """Calcula distância em metros entre dois pontos GPS."""
+    import math
+    R = 6371000
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def detectar_pacotes_fora_de_rota(pacotes_df, col_lat, col_lon, limiar_metros=300):
+    """
+    Recebe o DataFrame de pacotes de uma parada e retorna uma lista de índices
+    cujas coordenadas estão a mais de limiar_metros do centroide do grupo.
+    Retorna lista vazia se a parada tiver menos de 2 pacotes com coordenadas válidas.
+    """
+    lats = pd.to_numeric(pacotes_df[col_lat], errors="coerce")
+    lons = pd.to_numeric(pacotes_df[col_lon], errors="coerce")
+    validos = lats.notna() & lons.notna() & (lats != 0) & (lons != 0)
+
+    if validos.sum() < 2:
+        return []
+
+    lat_centro = lats[validos].mean()
+    lon_centro = lons[validos].mean()
+
+    fora = []
+    for idx in pacotes_df[validos].index:
+        dist = haversine_metros(lat_centro, lon_centro, lats[idx], lons[idx])
+        if dist > limiar_metros:
+            fora.append((idx, int(round(dist))))
+
+    return fora  # lista de (idx, distancia_metros)
+
+
 def exibir_logo_principal(width=280):
 
     if LOGO_PATH.exists():
@@ -3440,6 +3477,29 @@ if arquivo or df_base_manual is not None:
             else:
                 st.warning(f"Status da parada: {status_parada}")
 
+            # ── DETECTOR DE PACOTES FORA DE ROTA ───────────────────────────
+            pacotes_parada_todos = pacotes_por_parada.get(chave, df.iloc[0:0])
+            fora_de_rota = detectar_pacotes_fora_de_rota(
+                pacotes_parada_todos, col_lat, col_lon, limiar_metros=300
+            )
+            if fora_de_rota:
+                st.markdown(
+                    f"""
+                    <div style="background:#fef2f2;border:1.5px solid #fca5a5;
+                         border-radius:10px;padding:0.7rem 1rem;margin-bottom:0.4rem;">
+                        <span style="font-size:1rem;font-weight:700;color:#b91c1c;">
+                            ⚠️ {len(fora_de_rota)} pacote(s) fora do agrupamento
+                        </span><br>
+                        <span style="font-size:0.85rem;color:#7f1d1d;">
+                            Este(s) pacote(s) estão em endereços muito distantes
+                            dos demais nesta parada. Verifique antes de entregar.
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            # ── FIM DETECTOR ────────────────────────────────────────────────
+
             maps_url = (
                 "https://www.google.com/maps/search/?api=1"
                 f"&query={row[col_lat]},{row[col_lon]}"
@@ -3567,6 +3627,40 @@ if arquivo or df_base_manual is not None:
 
                     status = pacote["Status"]
                     codigo_pacote = str(pacote.get(col_spx, pacote.get("SPX TN", "")))
+
+                    # Verificar se este pacote específico está fora do agrupamento
+                    idxs_fora = [f[0] for f in fora_de_rota]
+                    dist_fora = {f[0]: f[1] for f in fora_de_rota}
+                    pacote_fora = idx in idxs_fora
+
+                    if pacote_fora:
+                        dist_m = dist_fora[idx]
+                        dist_txt = f"{dist_m / 1000:.1f} km" if dist_m >= 1000 else f"{dist_m} m"
+                        lat_pac = pd.to_numeric(pacote.get(col_lat, 0), errors="coerce")
+                        lon_pac = pd.to_numeric(pacote.get(col_lon, 0), errors="coerce")
+                        maps_pac = (
+                            f"https://www.google.com/maps/search/?api=1"
+                            f"&query={lat_pac},{lon_pac}"
+                        )
+                        st.markdown(
+                            f"""
+                            <div style="background:#fef2f2;border:1.5px solid #f87171;
+                                 border-radius:10px;padding:0.65rem 1rem;margin-bottom:0.3rem;">
+                                <span style="font-size:0.85rem;font-weight:700;color:#b91c1c;">
+                                    📦 Pacote fora do agrupamento — {dist_txt} do centro desta parada
+                                </span><br>
+                                <span style="font-size:0.8rem;color:#7f1d1d;">
+                                    Endereço: {pacote.get(col_endereco, "")}
+                                </span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        st.link_button(
+                            f"🗺️ Navegar até endereço real deste pacote",
+                            maps_pac,
+                            use_container_width=True
+                        )
 
                     st.write(f"**Código/Pedido:** {codigo_pacote}")
 
