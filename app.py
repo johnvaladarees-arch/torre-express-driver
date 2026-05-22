@@ -1636,6 +1636,113 @@ st.markdown(
 )
 # ── FIM FUNDO ANIMADO ─────────────────────────────────────────────────────────
 
+# ── SISTEMA OFFLINE ───────────────────────────────────────────────────────────
+import streamlit.components.v1 as _components
+
+_components.html("""
+<script>
+(function() {
+
+  const CACHE_KEY   = "torre_express_rota_v1";
+  const FILA_KEY    = "torre_express_fila_v1";
+  const STATUS_KEY  = "torre_express_online_v1";
+
+  // ── Banner de conexão ────────────────────────────────────────────────────
+  function criarBanner() {
+    if (document.getElementById("te-conexao-banner")) return;
+    const b = document.createElement("div");
+    b.id = "te-conexao-banner";
+    b.style.cssText = [
+      "position:fixed","top:0","left:0","width:100%","z-index:99999",
+      "text-align:center","padding:6px 12px","font-size:13px",
+      "font-weight:700","font-family:Arial,sans-serif",
+      "transition:background 0.4s,opacity 0.4s","pointer-events:none"
+    ].join(";");
+    document.body.appendChild(b);
+    return b;
+  }
+
+  function atualizarBanner(online) {
+    const b = criarBanner();
+    if (!b) return;
+    if (online) {
+      b.textContent = "✅ Conexão restaurada — dados sincronizados";
+      b.style.background = "#166534";
+      b.style.color       = "#fff";
+      b.style.opacity     = "1";
+      setTimeout(() => { b.style.opacity = "0"; }, 3500);
+    } else {
+      b.textContent = "⚠️ Sem conexão — baixas salvas localmente e sincronizadas ao reconectar";
+      b.style.background = "#f97316";
+      b.style.color       = "#fff";
+      b.style.opacity     = "1";
+    }
+  }
+
+  // ── Detectar mudança de conexão ──────────────────────────────────────────
+  function online()  { localStorage.setItem(STATUS_KEY, "1"); atualizarBanner(true);  tentarSincronizar(); }
+  function offline() { localStorage.setItem(STATUS_KEY, "0"); atualizarBanner(false); }
+
+  window.addEventListener("online",  online);
+  window.addEventListener("offline", offline);
+
+  // Verificar estado atual ao carregar
+  if (!navigator.onLine) atualizarBanner(false);
+
+  // ── Salvar rota no localStorage ──────────────────────────────────────────
+  window.teSalvarRota = function(jsonStr) {
+    try { localStorage.setItem(CACHE_KEY, jsonStr); } catch(e) {}
+  };
+
+  // ── Adicionar baixa à fila offline ──────────────────────────────────────
+  window.teAdicionarFila = function(baixa) {
+    // baixa = {idx, status, horario, ocorrencia}
+    try {
+      const fila = JSON.parse(localStorage.getItem(FILA_KEY) || "[]");
+      fila.push(baixa);
+      localStorage.setItem(FILA_KEY, JSON.stringify(fila));
+    } catch(e) {}
+  };
+
+  // ── Ler fila offline para o Python processar ─────────────────────────────
+  window.teLerFila = function() {
+    try { return localStorage.getItem(FILA_KEY) || "[]"; } catch(e) { return "[]"; }
+  };
+
+  // ── Limpar fila após sincronização ───────────────────────────────────────
+  window.teLimparFila = function() {
+    try { localStorage.removeItem(FILA_KEY); } catch(e) {}
+  };
+
+  // ── Ler rota em cache ────────────────────────────────────────────────────
+  window.teLerRota = function() {
+    try { return localStorage.getItem(CACHE_KEY) || ""; } catch(e) { return ""; }
+  };
+
+  // ── Tentar sincronizar ao voltar o sinal ─────────────────────────────────
+  function tentarSincronizar() {
+    const fila = JSON.parse(localStorage.getItem(FILA_KEY) || "[]");
+    if (fila.length === 0) return;
+    // Envia para o Streamlit via URL param para ser processado no próximo rerun
+    const url = new URL(window.location.href);
+    url.searchParams.set("sincronizar_offline", "1");
+    // Usa postMessage para comunicar com o iframe do Streamlit
+    window.parent.postMessage({type: "streamlit:setComponentValue", value: "sincronizar"}, "*");
+  }
+
+  // Verificar se há fila pendente ao carregar com conexão
+  if (navigator.onLine) {
+    const fila = JSON.parse(localStorage.getItem(FILA_KEY) || "[]");
+    if (fila.length > 0) {
+      setTimeout(() => atualizarBanner(true), 1000);
+    }
+  }
+
+})();
+</script>
+""", height=0, scrolling=False)
+# ── FIM SISTEMA OFFLINE ───────────────────────────────────────────────────────
+
 if perfil_logado == "motorista":
     opcoes_menu = ["Operação", "Resumo da Rota", "Sobre a Plataforma"]
 elif perfil_logado == "gestor":
@@ -2217,6 +2324,39 @@ if arquivo or df_base_manual is not None:
 
     df = st.session_state.df_rota
 
+    # ── CACHE OFFLINE DA ROTA ─────────────────────────────────────────────────
+    try:
+        import json as _json
+        _cols_offline = [c for c in [
+            col_spx, col_endereco, col_lat, col_lon,
+            "Status", "Ocorrencia", "Horario_Baixa", "_Endereco_Normalizado"
+        ] if c in df.columns]
+        _df_cache = df[_cols_offline].copy()
+        _df_cache = _df_cache.fillna("").astype(str)
+        _rota_json = _df_cache.to_json(orient="records", force_ascii=False)
+        _components.html(
+            f"""<script>
+            if(window.teSalvarRota) window.teSalvarRota({_json.dumps(_rota_json)});
+            </script>""",
+            height=0, scrolling=False
+        )
+    except Exception:
+        pass
+
+    # ── AVISO DE MAPA OFFLINE ─────────────────────────────────────────────────
+    if not st.session_state.get("aviso_mapa_offline_visto"):
+        st.info(
+            "📴 **Dica para áreas sem sinal:** Baixe o mapa da sua região no Google Maps "
+            "antes de sair. Abra o Google Maps → toque na foto do perfil → "
+            "**Mapas off-line** → Selecione a área. "
+            "As baixas feitas sem sinal serão salvas automaticamente e sincronizadas ao reconectar.",
+            icon="🗺️"
+        )
+        if st.button("✅ Entendi, não mostrar novamente", key="fechar_aviso_offline"):
+            st.session_state["aviso_mapa_offline_visto"] = True
+            st.rerun()
+    # ── FIM CACHE OFFLINE ─────────────────────────────────────────────────────
+
     if "Motorista_Responsavel" not in df.columns:
         df["Motorista_Responsavel"] = ""
 
@@ -2516,7 +2656,24 @@ if arquivo or df_base_manual is not None:
 
         salvar_snapshot_operacional()
 
-    total_pacotes = len(df)
+        # ── Atualizar cache offline no localStorage ───────────────────────
+        try:
+            import json as _json2
+            _cols_off = [c for c in [
+                col_spx, col_endereco, col_lat, col_lon,
+                "Status", "Ocorrencia", "Horario_Baixa", "_Endereco_Normalizado"
+            ] if c in st.session_state.df_rota.columns]
+            _df_off = st.session_state.df_rota[_cols_off].fillna("").astype(str)
+            _json_off = _df_off.to_json(orient="records", force_ascii=False)
+            _components.html(
+                f"""<script>
+                if(window.teSalvarRota) window.teSalvarRota({_json2.dumps(_json_off)});
+                </script>""",
+                height=0, scrolling=False
+            )
+        except Exception:
+            pass
+        # ── FIM cache offline ─────────────────────────────────────────────
 
     entregues = len(
         df[df["Status"] == "Entregue"]
