@@ -1649,83 +1649,83 @@ else:
                 type=["xlsx"],
                 key=f"upload_romaneio_{st.session_state.upload_romaneio_versao}"
             )
-    else:
-        if "entregas_manuais" not in st.session_state:
-            st.session_state.entregas_manuais = []
+        else:
+            if "entregas_manuais" not in st.session_state:
+                st.session_state.entregas_manuais = []
 
-        with st.form("form_entrega_manual", clear_on_submit=True):
-            st.markdown("**Cadastrar entrega**")
+            with st.form("form_entrega_manual", clear_on_submit=True):
+                st.markdown("**Cadastrar entrega**")
 
-            col_m1, col_m2 = st.columns(2)
+                col_m1, col_m2 = st.columns(2)
 
-            with col_m1:
-                codigo_pedido = st.text_input("Código do pedido")
-                cliente = st.text_input("Cliente")
-                telefone = st.text_input("Telefone")
-                endereco_manual = st.text_input("Endereço")
-                complemento = st.text_input("Complemento")
+                with col_m1:
+                    codigo_pedido = st.text_input("Código do pedido")
+                    cliente = st.text_input("Cliente")
+                    telefone = st.text_input("Telefone")
+                    endereco_manual = st.text_input("Endereço")
+                    complemento = st.text_input("Complemento")
 
-            with col_m2:
-                bairro = st.text_input("Bairro")
-                cidade = st.text_input("Cidade")
-                latitude_manual = st.number_input(
-                    "Latitude",
-                    value=float(st.session_state.get("lat_motorista", -26.9194)),
-                    format="%.6f"
-                )
-                longitude_manual = st.number_input(
-                    "Longitude",
-                    value=float(st.session_state.get("lon_motorista", -49.0661)),
-                    format="%.6f"
-                )
-                motorista_responsavel = st.text_input(
-                    "Motorista responsável",
-                    value=st.session_state["usuario_logado"]["nome"]
-                )
-
-            observacao_manual = st.text_area("Observação", height=70)
-            adicionar_entrega = st.form_submit_button("Adicionar entrega")
-
-        if adicionar_entrega:
-            if not codigo_pedido or not endereco_manual:
-                st.error("Informe pelo menos código do pedido e endereço.")
-            else:
-                st.session_state.entregas_manuais.append(
-                    {
-                        "Codigo Pedido": codigo_pedido,
-                        "Cliente": cliente,
-                        "Telefone": telefone,
-                        "Endereco": endereco_manual,
-                        "Complemento": complemento,
-                        "Bairro": bairro,
-                        "City": cidade,
-                        "Latitude": latitude_manual,
-                        "Longitude": longitude_manual,
-                        "Observacao": observacao_manual,
-                        "Motorista_Responsavel": motorista_responsavel
-                    }
-                )
-                st.success("Entrega adicionada.")
-
-        if len(st.session_state.entregas_manuais) > 0:
-            st.dataframe(
-                pd.DataFrame(st.session_state.entregas_manuais),
-                use_container_width=True,
-                hide_index=True
-            )
-
-            col_iniciar_manual, col_limpar_manual = st.columns(2)
-
-            with col_iniciar_manual:
-                if st.button("Iniciar rota manual"):
-                    df_base_manual = pd.DataFrame(
-                        st.session_state.entregas_manuais
+                with col_m2:
+                    bairro = st.text_input("Bairro")
+                    cidade = st.text_input("Cidade")
+                    latitude_manual = st.number_input(
+                        "Latitude",
+                        value=float(st.session_state.get("lat_motorista", -26.9194)),
+                        format="%.6f"
+                    )
+                    longitude_manual = st.number_input(
+                        "Longitude",
+                        value=float(st.session_state.get("lon_motorista", -49.0661)),
+                        format="%.6f"
+                    )
+                    motorista_responsavel = st.text_input(
+                        "Motorista responsável",
+                        value=st.session_state["usuario_logado"]["nome"]
                     )
 
-            with col_limpar_manual:
-                if st.button("Limpar entregas manuais"):
-                    st.session_state.entregas_manuais = []
-                    st.rerun()
+                observacao_manual = st.text_area("Observação", height=70)
+                adicionar_entrega = st.form_submit_button("Adicionar entrega")
+
+            if adicionar_entrega:
+                if not codigo_pedido or not endereco_manual:
+                    st.error("Informe pelo menos código do pedido e endereço.")
+                else:
+                    st.session_state.entregas_manuais.append(
+                        {
+                            "Codigo Pedido": codigo_pedido,
+                            "Cliente": cliente,
+                            "Telefone": telefone,
+                            "Endereco": endereco_manual,
+                            "Complemento": complemento,
+                            "Bairro": bairro,
+                            "City": cidade,
+                            "Latitude": latitude_manual,
+                            "Longitude": longitude_manual,
+                            "Observacao": observacao_manual,
+                            "Motorista_Responsavel": motorista_responsavel
+                        }
+                    )
+                    st.success("Entrega adicionada.")
+
+            if len(st.session_state.entregas_manuais) > 0:
+                st.dataframe(
+                    pd.DataFrame(st.session_state.entregas_manuais),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                col_iniciar_manual, col_limpar_manual = st.columns(2)
+
+                with col_iniciar_manual:
+                    if st.button("Iniciar rota manual"):
+                        df_base_manual = pd.DataFrame(
+                            st.session_state.entregas_manuais
+                        )
+
+                with col_limpar_manual:
+                    if st.button("Limpar entregas manuais"):
+                        st.session_state.entregas_manuais = []
+                        st.rerun()
 
 if not arquivo and df_base_manual is None:
     st.info("Crie uma nova rota ou carregue uma planilha para iniciar a operação.")
