@@ -1492,6 +1492,150 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ── FUNDO ANIMADO (mesmo visual da tela de login) ─────────────────────────────
+st.markdown(
+    """
+    <style>
+        :root {
+            --torre-azul: #0b1f3a;
+            --torre-laranja: #f97316;
+            --torre-fundo: #f3f4f6;
+            color-scheme: light;
+        }
+
+        .stApp {
+            background:
+                radial-gradient(circle at 16% 14%, rgba(249, 115, 22, 0.08), transparent 22%),
+                radial-gradient(circle at 86% 18%, rgba(11, 31, 58, 0.08), transparent 24%),
+                linear-gradient(90deg, rgba(11, 31, 58, 0.025) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(11, 31, 58, 0.018) 1px, transparent 1px),
+                var(--torre-fundo);
+            background-size: auto, auto, 72px 72px, 72px 72px, auto;
+            overflow-x: hidden;
+        }
+
+        html, body, [class*="css"] { color-scheme: light; }
+        p, label, span, div, input, textarea { color: #111827; }
+
+        [data-testid="stAppViewContainer"] > .main {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ops-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .ops-road {
+            position: absolute;
+            width: 520px;
+            height: 220px;
+            border: 18px solid rgba(11, 31, 58, 0.055);
+            border-left-color: transparent;
+            border-bottom-color: transparent;
+            border-radius: 55% 45% 50% 50%;
+            transform: rotate(-14deg);
+        }
+
+        .ops-road::after {
+            content: "";
+            position: absolute;
+            inset: 18px;
+            border-top: 2px dashed rgba(11, 31, 58, 0.13);
+            border-right: 2px dashed rgba(11, 31, 58, 0.10);
+            border-radius: 55% 45% 50% 50%;
+        }
+
+        .ops-road.one  { left: -130px; top: 80px; }
+        .ops-road.two  { right: -180px; bottom: 58px; transform: rotate(164deg); opacity: 0.82; }
+
+        .ops-route {
+            position: absolute;
+            width: 430px;
+            height: 150px;
+            border-top: 3px dashed rgba(249, 115, 22, 0.22);
+            border-radius: 50%;
+            transform: rotate(18deg);
+        }
+
+        .ops-route.one { left: 8%;  bottom: 16%; }
+        .ops-route.two { right: 9%; top: 19%; width: 340px; transform: rotate(-21deg); opacity: 0.70; }
+
+        .ops-pin {
+            position: absolute;
+            width: 13px;
+            height: 13px;
+            border-radius: 50% 50% 50% 0;
+            background: rgba(249, 115, 22, 0.30);
+            transform: rotate(-45deg);
+            box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.055);
+        }
+
+        .ops-pin::after {
+            content: "";
+            position: absolute;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.84);
+            left: 4px; top: 4px;
+        }
+
+        .ops-pin.a { left: 15%;  top: 31%; }
+        .ops-pin.b { right: 18%; top: 42%; background: rgba(11, 31, 58, 0.24); box-shadow: 0 0 0 6px rgba(11, 31, 58, 0.045); }
+        .ops-pin.c { left: 72%;  bottom: 20%; opacity: 0.75; }
+
+        .ops-vehicle {
+            position: absolute;
+            width: 38px; height: 19px;
+            border-radius: 7px 9px 6px 6px;
+            background: rgba(11, 31, 58, 0.20);
+            box-shadow: inset 12px 0 0 rgba(249, 115, 22, 0.16);
+        }
+
+        .ops-vehicle::before,
+        .ops-vehicle::after {
+            content: "";
+            position: absolute;
+            bottom: -4px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: rgba(11, 31, 58, 0.18);
+        }
+
+        .ops-vehicle::before { left: 7px; }
+        .ops-vehicle::after  { right: 7px; }
+
+        .ops-vehicle.a { left: 21%;  bottom: 25%; transform: rotate(9deg); }
+        .ops-vehicle.b { right: 23%; top: 28%;    transform: rotate(-15deg); opacity: 0.75; }
+
+        @media (max-width: 720px) {
+            .ops-bg { opacity: 0.62; }
+            .ops-road.one  { left: -260px; top: 90px; }
+            .ops-road.two  { right: -300px; bottom: 34px; }
+            .ops-route.one { left: -120px; bottom: 12%; }
+            .ops-route.two, .ops-vehicle.b, .ops-pin.b { display: none; }
+        }
+    </style>
+    <div class="ops-bg" aria-hidden="true">
+        <div class="ops-road one"></div>
+        <div class="ops-road two"></div>
+        <div class="ops-route one"></div>
+        <div class="ops-route two"></div>
+        <span class="ops-pin a"></span>
+        <span class="ops-pin b"></span>
+        <span class="ops-pin c"></span>
+        <span class="ops-vehicle a"></span>
+        <span class="ops-vehicle b"></span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+# ── FIM FUNDO ANIMADO ─────────────────────────────────────────────────────────
+
 if perfil_logado == "motorista":
     opcoes_menu = ["Operação", "Resumo da Rota", "Sobre a Plataforma"]
 elif perfil_logado == "gestor":
