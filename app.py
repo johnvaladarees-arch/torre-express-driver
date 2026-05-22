@@ -1499,6 +1499,7 @@ elif perfil_logado == "gestor":
         "Operação",
         "Distribuição de Rotas",
         "Resumo da Rota",
+        "Dashboard",
         "Histórico",
         "Sobre a Plataforma",
         "Configurações"
@@ -1508,6 +1509,7 @@ else:
         "Operação",
         "Distribuição de Rotas",
         "Resumo da Rota",
+        "Dashboard",
         "Histórico",
         "Usuários",
         "Sobre a Plataforma",
@@ -1529,6 +1531,10 @@ if pagina_atual == "Resumo da Rota":
 
 if pagina_atual == "Distribuição de Rotas":
     exibir_distribuicao_rotas()
+    st.stop()
+
+if pagina_atual == "Dashboard":
+    dashboard_exibir_gerencial()
     st.stop()
 
 if pagina_atual == "Histórico":
