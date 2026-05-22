@@ -2864,52 +2864,40 @@ if arquivo or df_base_manual is not None:
             unsafe_allow_html=True
         )
 
-        with st.container(border=True):
-            st.markdown("**Operação da rota**")
-            col_op1, col_op2, col_op3 = st.columns(3)
-            col_op1.metric("KM total", f"{km_inteligente:.1f} km")
-            col_op2.metric("KM restante", f"{km_restante:.1f} km")
-            col_op3.metric("Tempo total", formatar_tempo(tempo_inteligente))
+        # Layout mobile-first para motorista
+        if perfil_logado == "motorista":
+            # Barra de progresso simples no topo
+            st.markdown(
+                f"""
+                <div style="background:#f3f4f6;border-radius:12px;padding:0.75rem 1rem;
+                            margin-bottom:0.75rem;display:flex;justify-content:space-between;
+                            align-items:center;">
+                    <span style="font-size:0.9rem;color:#6b7280;">Progresso</span>
+                    <span style="font-size:1rem;font-weight:700;color:#0b1f3a;">
+                        {pacotes_concluidos} de {total_pacotes} entregas
+                    </span>
+                    <span style="font-size:0.9rem;font-weight:700;color:#f97316;">
+                        {progresso_rota_pct}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            st.progress(min(max(progresso_rota, 0), 1))
 
-            col_op4, col_op5, col_op6 = st.columns(3)
-            col_op4.metric("Paradas", total_paradas)
-            col_op5.metric("Concluídas", paradas_concluidas)
-            col_op6.metric("Pacotes", total_pacotes)
+            # Botão de navegação — largura total
+            st.link_button(
+                "🗺️ Navegar até este endereço",
+                maps_url_proxima,
+                use_container_width=True
+            )
 
-            col_op7, col_op8 = st.columns(2)
-            col_op7.metric("Pacotes concluídos", pacotes_concluidos)
-            col_op8.metric("Total rota", progresso_rota_pct)
-
-        with st.container(border=True):
-            st.markdown("**Progresso operacional**")
-            col_prog1, col_prog2 = st.columns(2)
-
-            with col_prog1:
-                st.caption(f"Região: {progresso_regiao_pct}")
-                st.progress(min(max(progresso_regiao, 0), 1))
-
-            with col_prog2:
-                st.caption(f"Total rota: {progresso_rota_pct}")
-                st.progress(min(max(progresso_rota, 0), 1))
-
-        with st.container(border=True):
-            st.markdown("**Parada atual**")
-            st.write(f"**{endereco_proxima}**")
-            st.caption(f"{bairro_proximo} | Região {regiao_numero} - {regiao_nome}")
-            st.metric("Pacotes pendentes nesta parada", int(
-                status_por_parada.at[chave_proxima_painel, "Pendente"]
-            ) if chave_proxima_painel in status_por_parada.index else 0)
-
-        acao_1, acao_2, acao_3 = st.columns(3, gap="small")
-
-        with acao_1:
-            st.link_button("Navegar", maps_url_proxima, type="secondary")
-
-        with acao_2:
+            # Botões de ação — largura total
             if st.button(
-                "Entregar Parada",
+                "✅ Entregar Parada",
                 key="painel_entregar_parada",
-                type="primary"
+                type="primary",
+                use_container_width=True
             ):
                 horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 mask = (
@@ -2952,11 +2940,11 @@ if arquivo or df_base_manual is not None:
                 st.info("Parada mantida como pendente e enviada para depois na região.")
                 st.rerun()
 
-        with acao_3:
-            if st.button(
-                "Recusar Parada",
+        if st.button(
+                "❌ Recusar Parada",
                 key="painel_recusar_parada",
-                type="primary"
+                type="primary",
+                use_container_width=True
             ):
                 horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 mask = (
@@ -2993,39 +2981,41 @@ if arquivo or df_base_manual is not None:
                 salvar_snapshot_operacional()
                 st.rerun()
 
-        st.caption(
-            f"Parada atual: {finalizados_proxima}/{total_pacotes_proxima} pacotes finalizados"
-        )
-        st.progress(progresso_parada)
-        st.caption(
-            f"Região atual: {finalizados_regiao}/{total_pacotes_regiao} pacotes finalizados"
-        )
-        st.progress(progresso_regiao)
+        # Mostrar próximas paradas só para gestor/admin
+        if perfil_logado != "motorista":
+            st.caption(
+                f"Parada atual: {finalizados_proxima}/{total_pacotes_proxima} pacotes finalizados"
+            )
+            st.progress(progresso_parada)
+            st.caption(
+                f"Região atual: {finalizados_regiao}/{total_pacotes_regiao} pacotes finalizados"
+            )
+            st.progress(progresso_regiao)
 
-        if len(proximas_tres) > 0:
-            st.caption("Próximas paradas da região")
-            colunas_proximas = st.columns(len(proximas_tres), gap="small")
+            if len(proximas_tres) > 0:
+                st.caption("Próximas paradas da região")
+                colunas_proximas = st.columns(len(proximas_tres), gap="small")
 
-            for coluna_proxima, (parada_item, qtd_pendente) in zip(
-                colunas_proximas,
-                proximas_tres
-            ):
-                endereco_item = str(parada_item[col_endereco])
-                regiao_item = str(parada_item.get("_Nome_Regiao", "-"))
-                bairro_item = str(parada_item.get("Bairro", regiao_item))
-                ordem_item = int(parada_item["Ordem"])
+                for coluna_proxima, (parada_item, qtd_pendente) in zip(
+                    colunas_proximas,
+                    proximas_tres
+                ):
+                    endereco_item = str(parada_item[col_endereco])
+                    regiao_item = str(parada_item.get("_Nome_Regiao", "-"))
+                    bairro_item = str(parada_item.get("Bairro", regiao_item))
+                    ordem_item = int(parada_item["Ordem"])
 
-                with coluna_proxima:
-                    with st.container(border=True):
-                        if ordem_item == ordem_proxima:
-                            st.success(f"Atual #{ordem_item}")
-                        else:
-                            st.caption(f"Parada #{ordem_item}")
+                    with coluna_proxima:
+                        with st.container(border=True):
+                            if ordem_item == ordem_proxima:
+                                st.success(f"Atual #{ordem_item}")
+                            else:
+                                st.caption(f"Parada #{ordem_item}")
 
-                        st.write(f"**{bairro_item}**")
-                        st.caption(f"Região: {regiao_item}")
-                        st.write(endereco_item)
-                        st.caption(f"{qtd_pendente} pendente(s)")
+                            st.write(f"**{bairro_item}**")
+                            st.caption(f"Região: {regiao_item}")
+                            st.write(endereco_item)
+                            st.caption(f"{qtd_pendente} pendente(s)")
 
         if modo_foco_entrega:
             if "ultimo_autosalvamento" in st.session_state:
