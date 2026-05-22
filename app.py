@@ -3451,114 +3451,87 @@ if arquivo or df_base_manual is not None:
                 use_container_width=True
             )
 
-            col_a, col_b = st.columns(2)
+            # ── Botões Entregar tudo / Recusar tudo — só com 2+ pendentes ──
+            if pendentes_parada >= 2:
+                col_a, col_b = st.columns(2)
 
-            with col_a:
+                with col_a:
+                    if st.button(
+                        "Entregar tudo",
+                        key=f"entregar_{i}",
+                        use_container_width=True
+                    ):
+                        horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        mask = (
+                            st.session_state.df_rota["_Endereco_Normalizado"] == chave
+                        )
+                        st.session_state.df_rota.loc[mask, "Status"] = "Entregue"
+                        st.session_state.df_rota.loc[mask, "Ocorrencia"] = ""
+                        st.session_state.df_rota.loc[mask, "Horario_Baixa"] = horario
+                        st.session_state.df_rota.loc[mask, "POD_Horario_Entrega"] = horario
+                        st.session_state.df_rota.loc[mask, "POD_Latitude_Baixa"] = lat_baixa
+                        st.session_state.df_rota.loc[mask, "POD_Longitude_Baixa"] = lon_baixa
+                        salvar_snapshot_operacional()
+                        st.rerun()
 
-                if st.button(
-                    "Entregar tudo",
-                    key=f"entregar_{i}",
-                    use_container_width=True
-                ):
+                with col_b:
+                    if st.button(
+                        "Recusar tudo",
+                        key=f"recusar_{i}",
+                        use_container_width=True
+                    ):
+                        st.session_state[f"recusar_tudo_aberto_{i}"] = True
 
-                    horario = datetime.now().strftime(
-                        "%d/%m/%Y %H:%M:%S"
+                # Ocorrência inline ao recusar tudo
+                if st.session_state.get(f"recusar_tudo_aberto_{i}"):
+                    st.warning("Selecione a ocorrência para recusar todos os pacotes:")
+                    ocorrencia_tudo = st.selectbox(
+                        "Ocorrência",
+                        [o for o in opcoes_ocorrencia if o != ""],
+                        key=f"ocorrencia_tudo_{i}"
                     )
+                    col_ct1, col_ct2 = st.columns(2)
+                    with col_ct1:
+                        if st.button(
+                            "✅ Confirmar recusa",
+                            key=f"confirmar_recusar_tudo_{i}",
+                            type="primary",
+                            use_container_width=True
+                        ):
+                            horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                            mask = (
+                                st.session_state.df_rota["_Endereco_Normalizado"] == chave
+                            )
+                            st.session_state.df_rota.loc[mask, "Status"] = "Recusado"
+                            st.session_state.df_rota.loc[mask, "Horario_Baixa"] = horario
+                            st.session_state.df_rota.loc[mask, "POD_Latitude_Baixa"] = lat_baixa
+                            st.session_state.df_rota.loc[mask, "POD_Longitude_Baixa"] = lon_baixa
+                            st.session_state.df_rota.loc[mask, "Ocorrencia"] = ocorrencia_tudo
+                            st.session_state.pop(f"recusar_tudo_aberto_{i}", None)
+                            salvar_snapshot_operacional()
+                            st.rerun()
+                    with col_ct2:
+                        if st.button(
+                            "❌ Cancelar",
+                            key=f"cancelar_recusar_tudo_{i}",
+                            use_container_width=True
+                        ):
+                            st.session_state.pop(f"recusar_tudo_aberto_{i}", None)
+                            st.rerun()
 
-                    mask = (
-                        st.session_state.df_rota[
-                            "_Endereco_Normalizado"
-                        ] == chave
-                    )
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "Status"
-                    ] = "Entregue"
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "Ocorrencia"
-                    ] = ""
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "Horario_Baixa"
-                    ] = horario
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Horario_Entrega"
-                    ] = horario
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Latitude_Baixa"
-                    ] = lat_baixa
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Longitude_Baixa"
-                    ] = lon_baixa
-
-                    salvar_snapshot_operacional()
-                    st.rerun()
-
-            with col_b:
-
-                if st.button(
-                    "Recusar tudo",
-                    key=f"recusar_{i}",
-                    use_container_width=True
-                ):
-
-                    horario = datetime.now().strftime(
-                        "%d/%m/%Y %H:%M:%S"
-                    )
-
-                    mask = (
-                        st.session_state.df_rota[
-                            "_Endereco_Normalizado"
-                        ] == chave
-                    )
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "Status"
-                    ] = "Recusado"
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "Horario_Baixa"
-                    ] = horario
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Horario_Entrega"
-                    ] = horario
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Latitude_Baixa"
-                    ] = lat_baixa
-
-                    st.session_state.df_rota.loc[
-                        mask,
-                        "POD_Longitude_Baixa"
-                    ] = lon_baixa
-
-                    st.session_state.df_rota.loc[
-                        mask
-                        & (
-                            st.session_state.df_rota["Ocorrencia"]
-                            .fillna("")
-                            == ""
-                        ),
-                        "Ocorrencia"
-                    ] = "Outros"
-
-                    salvar_snapshot_operacional()
-                    st.rerun()
+            # ── Ocorrência inline para parada com recusa existente ──────────
+            if recusados_parada > 0 and pendentes_parada == 0:
+                ocorrencia_parada_atual = (
+                    pacotes_por_parada.get(chave, df.iloc[0:0])
+                    ["Ocorrencia"]
+                    .fillna("")
+                    .astype(str)
+                    .iloc[0] if len(pacotes_por_parada.get(chave, df.iloc[0:0])) > 0 else ""
+                )
+                if ocorrencia_parada_atual.lower() == "nan":
+                    ocorrencia_parada_atual = ""
+                if not ocorrencia_parada_atual:
+                    st.error("⚠️ Informe a ocorrência para esta recusa.")
 
             with st.expander("Ver pacotes", expanded=False):
 
@@ -3617,6 +3590,7 @@ if arquivo or df_base_manual is not None:
                             use_container_width=True
                         ):
                             atualizar_status_pacote(idx, "Entregue")
+                            st.session_state.pop(f"recusar_aberto_{idx}", None)
                             st.rerun()
 
                     with col_fast_2:
@@ -3627,7 +3601,90 @@ if arquivo or df_base_manual is not None:
                             use_container_width=True
                         ):
                             atualizar_status_pacote(idx, "Recusado")
+                            st.session_state[f"recusar_aberto_{idx}"] = True
                             st.rerun()
+
+                    # ── Ocorrência inline — aparece direto após recusa ──────
+                    ocorrencia_atual = str(pacote.get("Ocorrencia", ""))
+                    if ocorrencia_atual.lower() == "nan":
+                        ocorrencia_atual = ""
+
+                    if status == "Recusado":
+                        if not ocorrencia_atual:
+                            st.warning("⚠️ Informe a ocorrência:")
+                        if ocorrencia_atual in opcoes_ocorrencia:
+                            ocorrencia_idx = opcoes_ocorrencia.index(ocorrencia_atual)
+                        else:
+                            ocorrencia_idx = 0
+                        ocorrencia = st.selectbox(
+                            "Ocorrência",
+                            opcoes_ocorrencia,
+                            index=ocorrencia_idx,
+                            key=f"ocorrencia_{idx}"
+                        )
+                        if ocorrencia != ocorrencia_atual:
+                            st.session_state.df_rota.loc[idx, "Ocorrencia"] = ocorrencia
+                            salvar_snapshot_operacional()
+
+                        # ENL inline — só quando ocorrência = Endereço não localizado
+                        if ocorrencia == "Endereço não localizado":
+                            enl_foto_atual = str(pacote.get("ENL_Foto", ""))
+                            enl_foto_nome_atual = str(pacote.get("ENL_Foto_Nome", ""))
+                            enl_obs_atual = str(pacote.get("ENL_Observacao", ""))
+                            enl_lat_atual = str(pacote.get("ENL_Lat", ""))
+                            enl_lon_atual = str(pacote.get("ENL_Lon", ""))
+                            for _campo in ["enl_foto_atual", "enl_foto_nome_atual",
+                                           "enl_obs_atual", "enl_lat_atual", "enl_lon_atual"]:
+                                pass
+                            if enl_foto_atual.lower() == "nan": enl_foto_atual = ""
+                            if enl_foto_nome_atual.lower() == "nan": enl_foto_nome_atual = ""
+                            if enl_obs_atual.lower() == "nan": enl_obs_atual = ""
+                            if enl_lat_atual.lower() == "nan": enl_lat_atual = ""
+                            if enl_lon_atual.lower() == "nan": enl_lon_atual = ""
+
+                            enl_completo = bool(enl_foto_atual) and bool(enl_obs_atual.strip())
+
+                            st.markdown("**📍 Prova de Endereço Não Localizado**")
+                            if not enl_completo:
+                                st.error("⚠️ Foto do local e descrição são obrigatórios.")
+                            else:
+                                st.success("✅ Prova registrada.")
+
+                            enl_foto_input = st.camera_input(
+                                "📷 Foto do local (obrigatório)",
+                                key=f"enl_foto_{idx}"
+                            )
+                            if enl_foto_input is not None:
+                                enl_bytes = enl_foto_input.getvalue()
+                                st.session_state.df_rota.loc[idx, "ENL_Foto"] = base64.b64encode(enl_bytes).decode("utf-8")
+                                st.session_state.df_rota.loc[idx, "ENL_Foto_Nome"] = f"enl_foto_{idx}.jpg"
+                                st.session_state.df_rota.loc[idx, "ENL_Lat"] = lat_baixa
+                                st.session_state.df_rota.loc[idx, "ENL_Lon"] = lon_baixa
+                                salvar_snapshot_operacional()
+                                st.image(enl_bytes, caption="Foto do local registrada", width=180)
+                            elif enl_foto_atual:
+                                try:
+                                    st.image(base64.b64decode(enl_foto_atual),
+                                             caption=enl_foto_nome_atual or "Foto do local", width=180)
+                                except Exception:
+                                    st.caption("Foto do local salva.")
+
+                            enl_obs = st.text_area(
+                                "📝 Descreva o que encontrou (obrigatório)",
+                                value=enl_obs_atual,
+                                placeholder="Ex: Rua não existe no local, número não encontrado...",
+                                key=f"enl_obs_{idx}",
+                                height=80
+                            )
+                            if enl_obs != enl_obs_atual:
+                                st.session_state.df_rota.loc[idx, "ENL_Observacao"] = enl_obs
+                                salvar_snapshot_operacional()
+
+                            if enl_lat_atual and enl_lon_atual:
+                                st.caption(f"📡 GPS: {enl_lat_atual}, {enl_lon_atual}")
+                            else:
+                                st.caption("📡 GPS registrado ao tirar a foto.")
+                    # ── FIM ocorrência inline ───────────────────────────────
 
                     detalhes_pacote = (
                         st.popover("Detalhes")
@@ -3751,153 +3808,6 @@ if arquivo or df_base_manual is not None:
                             )
                         except Exception:
                             detalhes_pacote.caption("Foto POD salva.")
-
-                    ocorrencia_atual = str(
-                        pacote.get("Ocorrencia", "")
-                    )
-
-                    if ocorrencia_atual.lower() == "nan":
-                        ocorrencia_atual = ""
-
-                    if (
-                        status == "Recusado"
-                        and ocorrencia_atual == ""
-                    ):
-                        detalhes_pacote.warning(
-                            "Informe uma ocorrência para esta recusa."
-                        )
-
-                    if ocorrencia_atual in opcoes_ocorrencia:
-                        ocorrencia_idx = opcoes_ocorrencia.index(
-                            ocorrencia_atual
-                        )
-                    else:
-                        ocorrencia_idx = 0
-
-                    ocorrencia = detalhes_pacote.selectbox(
-                        "Ocorrência",
-                        opcoes_ocorrencia,
-                        index=ocorrencia_idx,
-                        key=f"ocorrencia_{idx}"
-                    )
-
-                    if ocorrencia != ocorrencia_atual:
-                        st.session_state.df_rota.loc[
-                            idx,
-                            "Ocorrencia"
-                        ] = ocorrencia
-                        salvar_snapshot_operacional()
-
-                    # ── PROVA DE ENDEREÇO NÃO LOCALIZADO ──────────────────
-                    if ocorrencia == "Endereço não localizado":
-
-                        enl_foto_atual = str(pacote.get("ENL_Foto", ""))
-                        enl_foto_nome_atual = str(pacote.get("ENL_Foto_Nome", ""))
-                        enl_obs_atual = str(pacote.get("ENL_Observacao", ""))
-                        enl_lat_atual = str(pacote.get("ENL_Lat", ""))
-                        enl_lon_atual = str(pacote.get("ENL_Lon", ""))
-
-                        for _v in [enl_foto_atual, enl_foto_nome_atual,
-                                   enl_obs_atual, enl_lat_atual, enl_lon_atual]:
-                            if _v.lower() == "nan":
-                                _v = ""
-
-                        if enl_foto_atual.lower() == "nan":
-                            enl_foto_atual = ""
-                        if enl_foto_nome_atual.lower() == "nan":
-                            enl_foto_nome_atual = ""
-                        if enl_obs_atual.lower() == "nan":
-                            enl_obs_atual = ""
-                        if enl_lat_atual.lower() == "nan":
-                            enl_lat_atual = ""
-                        if enl_lon_atual.lower() == "nan":
-                            enl_lon_atual = ""
-
-                        enl_completo = (
-                            bool(enl_foto_atual)
-                            and bool(enl_obs_atual.strip())
-                        )
-
-                        detalhes_pacote.markdown("---")
-                        detalhes_pacote.markdown(
-                            "**📍 Prova de Endereço Não Localizado**"
-                        )
-
-                        if not enl_completo:
-                            detalhes_pacote.error(
-                                "⚠️ Foto do local e descrição são obrigatórios "
-                                "para endereço não localizado."
-                            )
-                        else:
-                            detalhes_pacote.success(
-                                "✅ Prova registrada com sucesso."
-                            )
-
-                        # Foto do local
-                        enl_foto_input = detalhes_pacote.camera_input(
-                            "📷 Foto do local (obrigatório)",
-                            key=f"enl_foto_{idx}"
-                        )
-
-                        if enl_foto_input is not None:
-                            enl_bytes = enl_foto_input.getvalue()
-                            st.session_state.df_rota.loc[
-                                idx, "ENL_Foto"
-                            ] = base64.b64encode(enl_bytes).decode("utf-8")
-                            st.session_state.df_rota.loc[
-                                idx, "ENL_Foto_Nome"
-                            ] = f"enl_foto_{idx}.jpg"
-                            # Registrar GPS no momento da foto
-                            st.session_state.df_rota.loc[
-                                idx, "ENL_Lat"
-                            ] = lat_baixa
-                            st.session_state.df_rota.loc[
-                                idx, "ENL_Lon"
-                            ] = lon_baixa
-                            salvar_snapshot_operacional()
-                            detalhes_pacote.image(
-                                enl_bytes,
-                                caption="Foto do local registrada",
-                                width=180
-                            )
-                        elif enl_foto_atual:
-                            try:
-                                detalhes_pacote.image(
-                                    base64.b64decode(enl_foto_atual),
-                                    caption=enl_foto_nome_atual or "Foto do local",
-                                    width=180
-                                )
-                            except Exception:
-                                detalhes_pacote.caption("Foto do local salva.")
-
-                        # Descrição obrigatória
-                        enl_obs = detalhes_pacote.text_area(
-                            "📝 Descreva o que encontrou (obrigatório)",
-                            value=enl_obs_atual,
-                            placeholder=(
-                                "Ex: Rua não existe no local, número não "
-                                "encontrado na fachada, área interditada..."
-                            ),
-                            key=f"enl_obs_{idx}",
-                            height=90
-                        )
-
-                        if enl_obs != enl_obs_atual:
-                            st.session_state.df_rota.loc[
-                                idx, "ENL_Observacao"
-                            ] = enl_obs
-                            salvar_snapshot_operacional()
-
-                        # GPS registrado
-                        if enl_lat_atual and enl_lon_atual:
-                            detalhes_pacote.caption(
-                                f"📡 GPS registrado: {enl_lat_atual}, {enl_lon_atual}"
-                            )
-                        else:
-                            detalhes_pacote.caption(
-                                "📡 GPS será registrado automaticamente ao tirar a foto."
-                            )
-                    # ── FIM PROVA ENL ──────────────────────────────────────
 
                     observacao_atual = str(
                         pacote.get("Observacao", "")
