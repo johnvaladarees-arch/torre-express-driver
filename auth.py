@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 import sqlite3
+import base64
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,14 @@ def exibir_logo_auth(width=330):
         st.image(str(LOGO_PATH.resolve()), width=width)
     else:
         st.markdown("### Torre Express Driver")
+
+
+def obter_logo_base64():
+
+    if not LOGO_PATH.exists():
+        return ""
+
+    return base64.b64encode(LOGO_PATH.read_bytes()).decode("utf-8")
 
 
 def criar_hash_senha(senha):
@@ -200,6 +209,26 @@ def exibir_cadastro_admin_inicial():
 
 
 def exibir_login():
+
+    st.markdown(
+        """
+        <style>
+            header[data-testid="stHeader"] {
+                display: none !important;
+            }
+            div[data-testid="stToolbar"] {
+                display: none !important;
+            }
+            #MainMenu {
+                display: none !important;
+            }
+            footer {
+                display: none !important;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         """
@@ -587,7 +616,19 @@ def exibir_sidebar_usuario():
     usuario = st.session_state["usuario_logado"]
 
     if LOGO_PATH.exists():
-        st.sidebar.image(str(LOGO_PATH.resolve()), width=220)
+        logo_base64 = obter_logo_base64()
+        st.sidebar.markdown(
+            f"""
+            <div class="sidebar-logo-shell">
+                <img
+                    src="data:image/png;base64,{logo_base64}"
+                    alt="Torre Express Driver"
+                    class="sidebar-logo-img"
+                />
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
         st.sidebar.title("Torre Express Driver")
 
