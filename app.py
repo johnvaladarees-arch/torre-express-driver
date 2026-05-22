@@ -1205,10 +1205,24 @@ if "usuario_logado" not in st.session_state:
 exibir_sidebar_usuario()
 
 exibir_logo_principal()
-st.caption("Sistema operacional inteligente para motoristas")
+if perfil_logado != "motorista":
+    st.caption("Sistema operacional inteligente para motoristas")
 st.markdown(
     """
     <style>
+        /* Esconder toolbar do Streamlit (Fork, GitHub) */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        div[data-testid="stToolbar"] {
+            display: none !important;
+        }
+        #MainMenu {
+            display: none !important;
+        }
+        footer {
+            display: none !important;
+        }
         :root {
             --torre-azul: #0b1f3a;
             --torre-azul-2: #12355b;
@@ -2010,48 +2024,55 @@ if arquivo or df_base_manual is not None:
 
     with col_nova_rota:
         if st.button("Nova rota / Trocar romaneio", key="trocar_romaneio"):
-            chaves_rota = [
-                "df_rota",
-                "rota_carregada",
-                "rota_iniciada",
-                "romaneio_bytes",
-                "col_lat",
-                "col_lon",
-                "col_endereco",
-                "col_spx",
-                "col_sequencia",
-                "regiao_operacional_ativa",
-                "regiao_concluida_alerta",
-                "paradas_puladas",
-                "chave_rota_cerco",
-                "paradas_cerco",
-                "entregas_manuais"
-            ]
+            st.session_state["confirmar_nova_rota"] = True
 
-            for chave_rota in chaves_rota:
-                st.session_state.pop(chave_rota, None)
-
-            for chave_estado in list(st.session_state.keys()):
-                if str(chave_estado).startswith("carregar_pacotes_"):
-                    st.session_state.pop(chave_estado, None)
-
-            st.session_state.upload_romaneio_versao += 1
-            st.rerun()
+    if st.session_state.get("confirmar_nova_rota"):
+        st.warning("⚠️ Isso vai apagar a rota atual. Tem certeza?")
+        col_sim, col_nao = st.columns(2)
+        with col_sim:
+            if st.button("✅ Sim, trocar rota", key="confirmar_nova_rota_sim", type="primary", use_container_width=True):
+                chaves_rota = [
+                    "df_rota", "rota_carregada", "rota_iniciada", "romaneio_bytes",
+                    "col_lat", "col_lon", "col_endereco", "col_spx", "col_sequencia",
+                    "regiao_operacional_ativa", "regiao_concluida_alerta",
+                    "paradas_puladas", "chave_rota_cerco", "paradas_cerco",
+                    "entregas_manuais", "confirmar_nova_rota"
+                ]
+                for chave_rota in chaves_rota:
+                    st.session_state.pop(chave_rota, None)
+                for chave_estado in list(st.session_state.keys()):
+                    if str(chave_estado).startswith("carregar_pacotes_"):
+                        st.session_state.pop(chave_estado, None)
+                st.session_state.upload_romaneio_versao += 1
+                st.rerun()
+        with col_nao:
+            if st.button("❌ Cancelar", key="cancelar_nova_rota", use_container_width=True):
+                st.session_state.pop("confirmar_nova_rota", None)
+                st.rerun()
 
     with col_resetar_rota:
         if st.button("Resetar rota", key="resetar_rota"):
-            st.session_state.df_rota["Status"] = "Pendente"
+            st.session_state["confirmar_resetar"] = True
 
-            st.session_state.pop("regiao_operacional_ativa", None)
-            st.session_state.pop("regiao_concluida_alerta", None)
-            st.session_state.pop("paradas_puladas", None)
-
-            for chave_estado in list(st.session_state.keys()):
-                if str(chave_estado).startswith("carregar_pacotes_"):
-                    st.session_state.pop(chave_estado, None)
-
-            st.success("Status resetado. O romaneio e os dados operacionais foram mantidos.")
-            st.rerun()
+    if st.session_state.get("confirmar_resetar"):
+        st.warning("⚠️ Isso vai resetar todos os status para Pendente. Tem certeza?")
+        col_sim2, col_nao2 = st.columns(2)
+        with col_sim2:
+            if st.button("✅ Sim, resetar", key="confirmar_resetar_sim", type="primary", use_container_width=True):
+                st.session_state.df_rota["Status"] = "Pendente"
+                st.session_state.pop("regiao_operacional_ativa", None)
+                st.session_state.pop("regiao_concluida_alerta", None)
+                st.session_state.pop("paradas_puladas", None)
+                st.session_state.pop("confirmar_resetar", None)
+                for chave_estado in list(st.session_state.keys()):
+                    if str(chave_estado).startswith("carregar_pacotes_"):
+                        st.session_state.pop(chave_estado, None)
+                st.success("Status resetado.")
+                st.rerun()
+        with col_nao2:
+            if st.button("❌ Cancelar", key="cancelar_resetar", use_container_width=True):
+                st.session_state.pop("confirmar_resetar", None)
+                st.rerun()
 
     if "Status" not in df.columns:
         df["Status"] = "Pendente"
@@ -2891,32 +2912,32 @@ if arquivo or df_base_manual is not None:
                 type="primary",
                 use_container_width=True
             ):
-                horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                mask = (
-                    st.session_state.df_rota["_Endereco_Normalizado"]
-                    == proxima_parada["_Endereco_Normalizado"]
-                )
-                st.session_state.df_rota.loc[mask, "Status"] = "Entregue"
-                st.session_state.df_rota.loc[mask, "Ocorrencia"] = ""
-                st.session_state.df_rota.loc[
-                    mask,
-                    "Horario_Baixa"
-                ] = horario
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Horario_Entrega"
-                ] = horario
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Latitude_Baixa"
-                ] = lat_baixa
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Longitude_Baixa"
-                ] = lon_baixa
-                st.session_state["alteracao_operacional_pendente"] = True
-                salvar_snapshot_operacional()
-                st.rerun()
+                st.session_state["confirmar_entregar_painel"] = True
+
+            if st.session_state.get("confirmar_entregar_painel"):
+                st.warning(f"⚠️ Confirmar entrega de **{total_pacotes_proxima}** pacote(s)?")
+                col_e1, col_e2 = st.columns(2)
+                with col_e1:
+                    if st.button("✅ Confirmar", key="conf_entregar_sim", type="primary", use_container_width=True):
+                        horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        mask = (
+                            st.session_state.df_rota["_Endereco_Normalizado"]
+                            == proxima_parada["_Endereco_Normalizado"]
+                        )
+                        st.session_state.df_rota.loc[mask, "Status"] = "Entregue"
+                        st.session_state.df_rota.loc[mask, "Ocorrencia"] = ""
+                        st.session_state.df_rota.loc[mask, "Horario_Baixa"] = horario
+                        st.session_state.df_rota.loc[mask, "POD_Horario_Entrega"] = horario
+                        st.session_state.df_rota.loc[mask, "POD_Latitude_Baixa"] = lat_baixa
+                        st.session_state.df_rota.loc[mask, "POD_Longitude_Baixa"] = lon_baixa
+                        st.session_state["alteracao_operacional_pendente"] = True
+                        st.session_state.pop("confirmar_entregar_painel", None)
+                        salvar_snapshot_operacional()
+                        st.rerun()
+                with col_e2:
+                    if st.button("❌ Cancelar", key="conf_entregar_nao", use_container_width=True):
+                        st.session_state.pop("confirmar_entregar_painel", None)
+                        st.rerun()
 
         if paradas_pendentes_regiao > 1:
             if st.button(
@@ -2936,43 +2957,38 @@ if arquivo or df_base_manual is not None:
         if st.button(
                 "❌ Recusar Parada",
                 key="painel_recusar_parada",
-                type="primary",
+                type="secondary",
                 use_container_width=True
             ):
-                horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                mask = (
-                    st.session_state.df_rota["_Endereco_Normalizado"]
-                    == proxima_parada["_Endereco_Normalizado"]
-                )
-                st.session_state.df_rota.loc[mask, "Status"] = "Recusado"
-                st.session_state.df_rota.loc[
-                    mask,
-                    "Horario_Baixa"
-                ] = horario
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Horario_Entrega"
-                ] = ""
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Latitude_Baixa"
-                ] = lat_baixa
-                st.session_state.df_rota.loc[
-                    mask,
-                    "POD_Longitude_Baixa"
-                ] = lon_baixa
-                st.session_state.df_rota.loc[
-                    mask
-                    & (
-                        st.session_state.df_rota["Ocorrencia"]
-                        .fillna("")
-                        == ""
-                    ),
-                    "Ocorrencia"
-                ] = "Outros"
-                st.session_state["alteracao_operacional_pendente"] = True
-                salvar_snapshot_operacional()
-                st.rerun()
+                st.session_state["confirmar_recusar_painel"] = True
+
+        if st.session_state.get("confirmar_recusar_painel"):
+            st.warning(f"⚠️ Confirmar recusa de **{total_pacotes_proxima}** pacote(s)?")
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                if st.button("✅ Confirmar recusa", key="conf_recusar_sim", type="primary", use_container_width=True):
+                    horario = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    mask = (
+                        st.session_state.df_rota["_Endereco_Normalizado"]
+                        == proxima_parada["_Endereco_Normalizado"]
+                    )
+                    st.session_state.df_rota.loc[mask, "Status"] = "Recusado"
+                    st.session_state.df_rota.loc[mask, "Horario_Baixa"] = horario
+                    st.session_state.df_rota.loc[mask, "POD_Horario_Entrega"] = ""
+                    st.session_state.df_rota.loc[mask, "POD_Latitude_Baixa"] = lat_baixa
+                    st.session_state.df_rota.loc[mask, "POD_Longitude_Baixa"] = lon_baixa
+                    st.session_state.df_rota.loc[
+                        mask & (st.session_state.df_rota["Ocorrencia"].fillna("") == ""),
+                        "Ocorrencia"
+                    ] = "Outros"
+                    st.session_state["alteracao_operacional_pendente"] = True
+                    st.session_state.pop("confirmar_recusar_painel", None)
+                    salvar_snapshot_operacional()
+                    st.rerun()
+            with col_r2:
+                if st.button("❌ Cancelar", key="conf_recusar_nao", use_container_width=True):
+                    st.session_state.pop("confirmar_recusar_painel", None)
+                    st.rerun()
 
         # Mostrar próximas paradas só para gestor/admin
         if perfil_logado != "motorista":
