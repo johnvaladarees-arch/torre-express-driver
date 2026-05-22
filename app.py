@@ -2705,7 +2705,8 @@ if arquivo or df_base_manual is not None:
         unsafe_allow_html=True
     )
 
-    st.subheader("Painel do Motorista")
+    if perfil_logado != "motorista":
+        st.subheader("Painel do Motorista")
 
     if proxima_parada is not None:
 
@@ -2798,8 +2799,9 @@ if arquivo or df_base_manual is not None:
             lon_motorista
         ) if len(paradas_pendentes_df) > 0 else 0
         maps_url_proxima = (
-            "https://www.google.com/maps/search/?api=1"
-            f"&query={proxima_parada[col_lat]},{proxima_parada[col_lon]}"
+            "https://www.google.com/maps/dir/?api=1"
+            f"&destination={proxima_parada[col_lat]},{proxima_parada[col_lon]}"
+            f"&travelmode=driving"
         )
 
         alerta_regiao = st.session_state.pop(
@@ -2812,57 +2814,100 @@ if arquivo or df_base_manual is not None:
                 f"Região {alerta_regiao} concluída. Avançando para a Região {regiao_numero}."
             )
 
-        st.info(
-            f"Próxima ação recomendada: seguir para a Parada #{ordem_proxima} "
-            f"na Região {regiao_numero}."
-        )
-
-        if paradas_pendentes_regiao > 1:
-            st.caption(
-                f"Ainda há {paradas_pendentes_regiao} parada(s) pendente(s) nesta região."
-            )
-        else:
-            st.caption("Última parada pendente da região atual.")
-
-        st.markdown(
-            f"""
-            <div class="premium-shell">
-                <div class="premium-hero-grid">
-                    <div>
-                        <div class="premium-kicker">Próxima parada | {proxima_regiao}</div>
-                        <div class="premium-address">{endereco_proxima}</div>
-                        <div class="premium-grid">
-                            <div class="premium-stat">
-                                <span>Bairro</span>
-                                <strong>{bairro_proximo}</strong>
-                            </div>
-                            <div class="premium-stat">
-                                <span>Pacotes</span>
-                                <strong>{total_pacotes_proxima}</strong>
-                            </div>
-                            <div class="premium-stat">
-                                <span>Progresso</span>
-                                <strong>{progresso_parada_pct}%</strong>
-                            </div>
-                        </div>
+        if perfil_logado == "motorista":
+            # Card simplificado para motorista
+            st.markdown(
+                f"""
+                <div style="background:#0b1f3a;border-radius:16px;padding:1.2rem 1rem;
+                            margin-bottom:0.75rem;">
+                    <div style="font-size:0.8rem;color:#f97316;font-weight:600;
+                                letter-spacing:0.05em;margin-bottom:0.3rem;">
+                        PRÓXIMA ENTREGA
                     </div>
-                    <div class="premium-grid">
-                        <div class="premium-stat featured">
-                            <span>ETA</span>
-                            <strong>{eta_minutos} min</strong>
+                    <div style="font-size:1.3rem;font-weight:700;color:#ffffff;
+                                margin-bottom:0.75rem;line-height:1.3;">
+                        {endereco_proxima}
+                    </div>
+                    <div style="font-size:0.95rem;color:#cbd5e1;margin-bottom:0.75rem;">
+                        📍 {bairro_proximo}
+                    </div>
+                    <div style="display:flex;gap:1rem;">
+                        <div style="background:rgba(255,255,255,0.1);border-radius:8px;
+                                    padding:0.5rem 0.75rem;flex:1;text-align:center;">
+                            <div style="font-size:0.75rem;color:#94a3b8;">ETA</div>
+                            <div style="font-size:1.1rem;font-weight:700;color:#ffffff;">
+                                {eta_minutos} min
+                            </div>
                         </div>
-                        <div class="premium-stat featured">
-                            <span>Distância</span>
-                            <strong>{distancia_proxima:.2f} km</strong>
+                        <div style="background:rgba(255,255,255,0.1);border-radius:8px;
+                                    padding:0.5rem 0.75rem;flex:1;text-align:center;">
+                            <div style="font-size:0.75rem;color:#94a3b8;">Distância</div>
+                            <div style="font-size:1.1rem;font-weight:700;color:#ffffff;">
+                                {distancia_proxima:.1f} km
+                            </div>
                         </div>
-
+                        <div style="background:rgba(255,255,255,0.1);border-radius:8px;
+                                    padding:0.5rem 0.75rem;flex:1;text-align:center;">
+                            <div style="font-size:0.75rem;color:#94a3b8;">Pacotes</div>
+                            <div style="font-size:1.1rem;font-weight:700;color:#ffffff;">
+                                {total_pacotes_proxima}
+                            </div>
+                        </div>
                     </div>
                 </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.info(
+                f"Próxima ação recomendada: seguir para a Parada #{ordem_proxima} "
+                f"na Região {regiao_numero}."
+            )
 
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+            if paradas_pendentes_regiao > 1:
+                st.caption(
+                    f"Ainda há {paradas_pendentes_regiao} parada(s) pendente(s) nesta região."
+                )
+            else:
+                st.caption("Última parada pendente da região atual.")
+
+            st.markdown(
+                f"""
+                <div class="premium-shell">
+                    <div class="premium-hero-grid">
+                        <div>
+                            <div class="premium-kicker">Próxima parada | {proxima_regiao}</div>
+                            <div class="premium-address">{endereco_proxima}</div>
+                            <div class="premium-grid">
+                                <div class="premium-stat">
+                                    <span>Bairro</span>
+                                    <strong>{bairro_proximo}</strong>
+                                </div>
+                                <div class="premium-stat">
+                                    <span>Pacotes</span>
+                                    <strong>{total_pacotes_proxima}</strong>
+                                </div>
+                                <div class="premium-stat">
+                                    <span>Progresso</span>
+                                    <strong>{progresso_parada_pct}%</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="premium-grid">
+                            <div class="premium-stat featured">
+                                <span>ETA</span>
+                                <strong>{eta_minutos} min</strong>
+                            </div>
+                            <div class="premium-stat featured">
+                                <span>Distância</span>
+                                <strong>{distancia_proxima:.2f} km</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         # Layout mobile-first para motorista
         if perfil_logado == "motorista":
