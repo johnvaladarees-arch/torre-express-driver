@@ -210,6 +210,17 @@ def exibir_cadastro_admin_inicial():
 
 def exibir_login():
 
+    # ── Reset de emergência via URL (?reset_admin=1) ──────────────────────────
+    params = st.query_params
+    if params.get("reset_admin") == "1":
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("DELETE FROM usuarios")
+            conn.commit()
+        st.query_params.clear()
+        st.success("✅ Usuários resetados. Crie o admin agora.")
+        st.rerun()
+    # ── FIM reset ─────────────────────────────────────────────────────────────
+
     st.markdown(
         """
         <style>
@@ -264,16 +275,6 @@ def exibir_login():
             [data-testid="stAppViewContainer"] > .main {
                 position: relative;
                 z-index: 1;
-            }
-
-            [data-testid="column"] {
-                position: relative;
-                z-index: 2;
-            }
-
-            .stTabs {
-                position: relative;
-                z-index: 2;
             }
 
             .ops-bg {
@@ -527,7 +528,7 @@ def exibir_login():
         unsafe_allow_html=True
     )
 
-    col_esq, col_centro, col_dir = st.columns([1, 2, 1])
+    col_esq, col_centro, col_dir = st.columns([1, 1.35, 1])
 
     with col_centro:
         exibir_logo_auth()
