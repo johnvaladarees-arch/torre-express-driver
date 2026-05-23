@@ -277,6 +277,21 @@ def exibir_login():
                 z-index: 1;
             }
 
+            [data-testid="column"] {
+                position: relative;
+                z-index: 2;
+            }
+
+            .stTabs, [data-testid="stTabs"] {
+                position: relative;
+                z-index: 2;
+            }
+
+            [data-testid="stForm"] {
+                position: relative;
+                z-index: 2;
+            }
+
             .ops-bg {
                 position: fixed;
                 inset: 0;
@@ -528,7 +543,7 @@ def exibir_login():
         unsafe_allow_html=True
     )
 
-    col_esq, col_centro, col_dir = st.columns([1, 1.35, 1])
+    col_esq, col_centro, col_dir = st.columns([1, 2, 1])
 
     with col_centro:
         exibir_logo_auth()
